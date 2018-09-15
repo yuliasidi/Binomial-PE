@@ -17,7 +17,9 @@ idx <- as.numeric(args[length(args)])+1
 #alpha <- c(0.025)
 #beta <- c(0.1)
 
-SS <- readRDS(file = "SS_power90.rds")
+#SS <- readRDS(file = "SS_power90nmax.rds")
+SS <- readRDS(file = "SS_power90nmin.rds")
+
 
 # # of simulated studies
 n.sim <- 10000
@@ -78,11 +80,11 @@ dt.full <- dt.full%>%
          type1.FM   = map(FM.H0,   reject.H0),
          power.FM   = map(FM.H1,   reject.H0),
          type1.WN   = map(WN.H0,   reject.H0),
-         power.WN   = map(WN.H1,   reject.H0))%>%
-  dplyr::rename(t.GLM.H0 = t.H0, t.GLM.H1 = t.H1)%>%
-  type1_glm()%>%
-  power_glm()%>%
-  dplyr::rename(t.H0 = t.GLM.H0, t.H1 = t.GLM.H1)
+         power.WN   = map(WN.H1,   reject.H0))#%>%
+  # dplyr::rename(t.GLM.H0 = t.H0, t.GLM.H1 = t.H1)%>%
+  # type1_glm()%>%
+  # power_glm()%>%
+  # dplyr::rename(t.H0 = t.GLM.H0, t.H1 = t.GLM.H1)
 
 # Add X with predefined cor.
 
@@ -111,7 +113,7 @@ dt.full.X <- dt.full.X%>%
 # Save simulation results
 dt.full.sum <- dt.full%>%
   select(scenario.id, p_T, p_C, M2, alpha, power, N.total, 
-         type1.Wald, power.Wald, type1.FM, power.FM, type1.WN, power.WN, type1.GLM, power.GLM)%>%
+         type1.Wald, power.Wald, type1.FM, power.FM, type1.WN, power.WN)%>%
   mutate(type1.Wald = map_dbl(type1.Wald, as.numeric),
          power.Wald = map_dbl(power.Wald, as.numeric),
          type1.FM   = map_dbl(type1.FM  , as.numeric),
@@ -120,8 +122,11 @@ dt.full.sum <- dt.full%>%
          power.WN   = map_dbl(power.WN  , as.numeric),
          n.sim = n.sim)
 
-saveRDS(dt.full.sum, file = sprintf('dtfullsum_%02d.rds',idx))
-saveRDS(dt.full.X, file = sprintf('dtfull_%02d.rds',idx))
+#saveRDS(dt.full.sum, file = sprintf('dtfullsumnmax_%02d.rds',idx))
+#saveRDS(dt.full.X, file = sprintf('dtfullnmax_%02d.rds',idx))
+
+saveRDS(dt.full.sum, file = sprintf('dtfullsumnmin_%02d.rds',idx))
+saveRDS(dt.full.X, file = sprintf('dtfullnmin_%02d.rds',idx))
 
 
 

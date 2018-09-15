@@ -8,7 +8,7 @@ build_template(
   init_dir = 'jobs/run',
   template_file = 'Full1SS.condor',
   input_files = c('../myfiles/lib/','Step_0_init.R', 'PE_Bin_PD_Functions.R',
-                  'SS_power90.rds'),
+                  'SS_power90nmin.rds'),
   job_type = 'short')
 
 
@@ -25,7 +25,7 @@ condor::create_dirs(session, file = 'Full1SS.condor')
 
 ssh::scp_upload(session,
                 files = c('Step_0_init.R','PE_Bin_PD_Functions.R',
-                          'SS_power90.rds'),
+                          'SS_power90nmin.rds'),
                 to = '~/jobs/run'
 )
 
@@ -37,16 +37,18 @@ condor::condor_q(session)
 #dir.create('example/output/data',recursive = TRUE)
 
 # MOVE DATAFILES YOU WANT TO SAFE
-ssh::ssh_exec_wait(session, 'mv jobs/run/dtfull_*.rds jobs/savedata')
+ssh::ssh_exec_wait(session, 'mv jobs/run/dtfullnmin*.rds jobs/savedata')
 
 condor::pull(session,
              from = c('jobs/run/log',
                       'jobs/run/out',
                       'jobs/run/err',
-                      'jobs/run/*.rds'),
+                      'jobs/run/dtfull*.rds',
+                      'jobs/run/check*.rds'),
              to = c('output',
                     'output',
                     'output',
+                    'output/data',
                     'output/data'))
 
 condor::read_errs()
@@ -60,14 +62,17 @@ dtfullsum <- purrr::map_df(
   readRDS
 )
 
+saveRDS(dtfullsum, 'dtfullsum_nmin.rds')
+
 simcheck <- purrr::map_df(
   list.files(path = "output/data", pattern = "check",  full.names = TRUE),
   readRDS
 )
 
+saveRDS(simcheck, 'Simchecks/dtfullnminsum_check.rds')
 
-saveRDS(simcheck, 'Simchecks/dtfullsum_check.rds')
-
+condor::cleanup_local(dir = 'output',tag = 'Full')
+condor::cleanup_local(dir = 'output',tag = 'dtfull')
 condor::cleanup_local(dir = 'output',tag = 'check')
 
 ssh::ssh_disconnect(session)

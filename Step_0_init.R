@@ -4,11 +4,11 @@
 
  # Initiations prior to running all the programs
 
-library(tidyr)
-library(dplyr)
-library(ggplot2)
-library(purrr)
-library(reshape2)
+library(tidyr, warn.conflicts = F, quietly = T)
+library(dplyr, warn.conflicts = F, quietly = T)
+library(ggplot2, warn.conflicts = F, quietly = T)
+library(purrr, warn.conflicts = F, quietly = T)
+library(reshape2, warn.conflicts = F, quietly = T)
 
 source("PE_Bin_PD_Functions.R")
 
