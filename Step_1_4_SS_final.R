@@ -17,4 +17,26 @@ SS.min <- SS0%>%
 
     
 saveRDS(SS.max, 'SS_power90nmax.rds')    
-saveRDS(SS.min, 'SS_power90nmin.rds')    
+saveRDS(SS.min, 'SS_power90nmin.rds')   
+
+
+###############################
+## Save each SS separetely ####
+###############################
+
+SS.Wald <- SS0%>%
+  dplyr::mutate(N.total = N.total.Wald)%>%
+  dplyr::select(scenario.id, p_C, p_T, alpha, power, M2, N.total)
+
+
+SS.FM <- SS0%>%
+  dplyr::mutate(N.total = N.total.FM)%>%
+  dplyr::select(scenario.id, p_C, p_T, alpha, power, M2, N.total)
+
+SS.WN <- SS0%>%
+  dplyr::mutate(N.total = N.total.WN)%>%
+  dplyr::select(scenario.id, p_C, p_T, alpha, power, M2, N.total)
+
+saveRDS(SS.Wald,'SS_power90Wald.rds')
+saveRDS(SS.FM,'SS_power90FM.rds')
+saveRDS(SS.WN,'SS_power90WN.rds')

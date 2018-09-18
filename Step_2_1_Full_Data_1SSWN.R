@@ -17,12 +17,11 @@ idx <- as.numeric(args[length(args)])+1
 #alpha <- c(0.025)
 #beta <- c(0.1)
 
-#SS <- readRDS(file = "SS_power90nmax.rds")
-SS <- readRDS(file = "SS_power90nmin.rds")
+SS <- readRDS(file = "SS_power90WN.rds")
 
 
 # # of simulated studies
-n.sim <- 100000
+n.sim <- 10000
 
 #########################################################
 ########      Generate Patient Level Data     ###########
@@ -60,26 +59,18 @@ check.full <- dt.full%>%
   dplyr::mutate(c.H1 = pmap(list(t.H1, p_C, p_T, M2 = 0) , check_p))%>%
   dplyr::select(scenario.id, c.H0, c.H1)
 
-saveRDS(check.full, sprintf('check_p_%02d.rds',idx))
+saveRDS(check.full, sprintf('check_pwn_%02d.rds',idx))
 
 ######################################
 ###### Test NI by CI approach ########
 ######################################
 
 dt.full <- dt.full%>%
-  mutate(Wald.H0 = pmap(list(df=t.H0, n=N.total, M2 =  M2), Wald.CI),
-         Wald.H1 = pmap(list(df=t.H1, n=N.total, M2 =  M2), Wald.CI),
-         FM.H0 = pmap(list(df=t.H0, n=N.total, M2 =  M2), FM.CI),
-         FM.H1 = pmap(list(df=t.H1, n=N.total, M2 =  M2), FM.CI),
-         WN.H0 = pmap(list(df=t.H0, N_T = N.total/2, N_C = N.total/2, M2 = M2, alpha = alpha), wn.CI),
+  mutate(WN.H0 = pmap(list(df=t.H0, N_T = N.total/2, N_C = N.total/2, M2 = M2, alpha = alpha), wn.CI),
          WN.H1 = pmap(list(df=t.H1, N_T = N.total/2, N_C = N.total/2, M2 = M2, alpha = alpha), wn.CI))
 
 dt.full <- dt.full%>%
-  mutate(type1.Wald = map(Wald.H0, reject.H0),
-         power.Wald = map(Wald.H1, reject.H0),
-         type1.FM   = map(FM.H0,   reject.H0),
-         power.FM   = map(FM.H1,   reject.H0),
-         type1.WN   = map(WN.H0,   reject.H0),
+  mutate(type1.WN   = map(WN.H0,   reject.H0),
          power.WN   = map(WN.H1,   reject.H0))#%>%
   # dplyr::rename(t.GLM.H0 = t.H0, t.GLM.H1 = t.H1)%>%
   # type1_glm()%>%
@@ -112,21 +103,13 @@ dt.full.X <- dt.full.X%>%
 
 # Save simulation results
 dt.full.sum <- dt.full%>%
-  select(scenario.id, p_T, p_C, M2, alpha, power, N.total, 
-         type1.Wald, power.Wald, type1.FM, power.FM, type1.WN, power.WN)%>%
-  mutate(type1.Wald = map_dbl(type1.Wald, as.numeric),
-         power.Wald = map_dbl(power.Wald, as.numeric),
-         type1.FM   = map_dbl(type1.FM  , as.numeric),
-         power.FM   = map_dbl(power.FM  , as.numeric),
-         type1.WN   = map_dbl(type1.WN  , as.numeric),
+  select(scenario.id, p_T, p_C, M2, alpha, power, N.total, type1.WN, power.WN)%>%
+  mutate(type1.WN   = map_dbl(type1.WN  , as.numeric),
          power.WN   = map_dbl(power.WN  , as.numeric),
          n.sim = n.sim)
 
-#saveRDS(dt.full.sum, file = sprintf('dtfullsumnmax_%02d.rds',idx))
-#saveRDS(dt.full.X, file = sprintf('dtfullnmax_%02d.rds',idx))
-
-saveRDS(dt.full.sum, file = sprintf('dtfullsumnmin1_%02d.rds',idx))
-saveRDS(dt.full.X, file = sprintf('dtfullnmin1_%02d.rds',idx))
+saveRDS(dt.full.sum, file = sprintf('dtfullsumwn_%02d.rds',idx))
+saveRDS(dt.full.X, file = sprintf('dtfullwn_%02d.rds',idx))
 
 
 
