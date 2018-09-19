@@ -26,7 +26,7 @@ n.sim <- 10000
 #########################################################
 ########      Generate Patient Level Data     ###########
 #########################################################
-seed=98755
+set.seed(98755)
 
 SS.idx <- SS%>%
   dplyr::slice(idx)
@@ -59,7 +59,7 @@ check.full <- dt.full%>%
   dplyr::mutate(c.H1 = pmap(list(t.H1, p_C, p_T, M2 = 0) , check_p))%>%
   dplyr::select(scenario.id, c.H0, c.H1)
 
-saveRDS(check.full, sprintf('check_pwn_%02d.rds',idx))
+saveRDS(check.full, sprintf('check_pfm_%02d.rds',idx))
 
 ######################################
 ###### Test NI by CI approach ########

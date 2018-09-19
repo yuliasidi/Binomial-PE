@@ -55,26 +55,5 @@ condor::read_errs()
 
 condor::cleanup_remote(session)
 
-library(purrr)
-
-dtfullsum <- purrr::map_df(
-  list.files(path = "output/data", pattern = "dt",  full.names = TRUE),
-  readRDS
-)
-
-saveRDS(dtfullsum, 'dtfullsum_nmin.rds')
-
-simcheck <- purrr::map_df(
-  list.files(path = "output/data", pattern = "check",  full.names = TRUE),
-  readRDS
-)
-
-saveRDS(simcheck, 'Simchecks/dtfullnminsum_check.rds')
-
-condor::cleanup_local(dir = 'output',tag = 'Full')
-condor::cleanup_local(dir = 'output',tag = 'dtfull')
-condor::cleanup_local(dir = 'output',tag = 'check')
-
 ssh::ssh_disconnect(session)
 
-unlink('Full1SSWN.condor')
