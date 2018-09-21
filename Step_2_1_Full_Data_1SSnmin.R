@@ -22,12 +22,12 @@ SS <- readRDS(file = "SS_power90nmin.rds")
 
 
 # # of simulated studies
-n.sim <- 100000
+n.sim <- 10000
 
 #########################################################
 ########      Generate Patient Level Data     ###########
 #########################################################
-seed=98755
+set.seed(98755)
 
 SS.idx <- SS%>%
   dplyr::slice(idx)
@@ -60,15 +60,15 @@ check.full <- dt.full%>%
   dplyr::mutate(c.H1 = pmap(list(t.H1, p_C, p_T, M2 = 0) , check_p))%>%
   dplyr::select(scenario.id, c.H0, c.H1)
 
-saveRDS(check.full, sprintf('check_p_%02d.rds',idx))
+saveRDS(check.full, sprintf('check_pmin_%02d.rds',idx))
 
 ######################################
 ###### Test NI by CI approach ########
 ######################################
 
 dt.full <- dt.full%>%
-  mutate(Wald.H0 = pmap(list(df=t.H0, n=N.total, M2 =  M2), Wald.CI),
-         Wald.H1 = pmap(list(df=t.H1, n=N.total, M2 =  M2), Wald.CI),
+  mutate(Wald.H0 = pmap(list(df=t.H0, n=N.total, M2 =  M2), Wald.CI, y = y),
+         Wald.H1 = pmap(list(df=t.H1, n=N.total, M2 =  M2), Wald.CI, y = y),
          FM.H0 = pmap(list(df=t.H0, n=N.total, M2 =  M2), FM.CI),
          FM.H1 = pmap(list(df=t.H1, n=N.total, M2 =  M2), FM.CI),
          WN.H0 = pmap(list(df=t.H0, N_T = N.total/2, N_C = N.total/2, M2 = M2, alpha = alpha), wn.CI),
@@ -125,8 +125,8 @@ dt.full.sum <- dt.full%>%
 #saveRDS(dt.full.sum, file = sprintf('dtfullsumnmax_%02d.rds',idx))
 #saveRDS(dt.full.X, file = sprintf('dtfullnmax_%02d.rds',idx))
 
-saveRDS(dt.full.sum, file = sprintf('dtfullsumnmin1_%02d.rds',idx))
-saveRDS(dt.full.X, file = sprintf('dtfullnmin1_%02d.rds',idx))
+saveRDS(dt.full.sum, file = sprintf('dtfullsumnmin_%02d.rds',idx))
+saveRDS(dt.full.X, file = sprintf('dtfullnmin_%02d.rds',idx))
 
 
 

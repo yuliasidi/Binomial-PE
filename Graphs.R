@@ -196,3 +196,129 @@ htmlwidgets::saveWidget(temp,"temp.html")
 pdf("full_nmin_type1_100000.pdf")
 type1.full.plot.res
 dev.off()
+
+###################################
+### Type-I Error - N Each 10000 ###
+##################################
+
+dt.full.sum <- readRDS('dtfullsum_each.rds')
+
+type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
+  melt(id.vars = c("p_C","M2"))%>%
+  mutate(Method = case_when(variable == "type1.Wald" ~ "Wald",
+                            variable == "type1.FM"   ~ "Farrington-Manning",
+                            variable == "type1.WN"   ~ "Wilson-Newcombe"))%>%
+  select(-variable)%>%
+  rename(type1 = value)
+
+type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
+  geom_point(aes(color=Method))+
+  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
+  theme_bw()+
+  #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
+  scale_y_continuous(limits = c(0,0.05))+
+  xlab("Proportion of events in active treatment")+
+  ylab("Type-I error")+
+  theme(legend.position = "bottom")+
+  ggtitle("Type-I errors for 10000 simulations")+
+  facet_wrap(~M2)
+
+temp <- plotly::ggplotly(type1.full.plot.res)
+
+htmlwidgets::saveWidget(temp,"temp.html")  
+
+pdf("full_each_type1_10000.pdf")
+type1.full.plot.res
+dev.off()
+
+
+############################
+## SS per method ###########
+############################
+
+
+dt.full.sum <- readRDS('dtfullsum_each.rds')
+
+ss.full.plot <- dt.full.sum%>%select(p_C, M2, N.Wald, N.FM, N.WN)%>%
+  melt(id.vars = c("p_C","M2"))%>%
+  mutate(Method = case_when(variable == "N.Wald" ~ "Wald",
+                            variable == "N.FM"   ~ "Farrington-Manning",
+                            variable == "N.WN"   ~ "Wilson-Newcombe"))%>%
+  select(-variable)%>%
+  rename(ss = value)
+
+ss.full.plot.res <- ggplot(data = ss.full.plot, aes(x=p_C, y=ss, fill=Method))+
+  geom_bar(stat = 'identity', position=position_dodge())+
+  #geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
+  theme_bw()+
+  #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
+  #scale_y_continuous(limits = c(0,0.05))+
+  xlab("Proportion of events in active treatment")+
+  ylab("Sample size")+
+  theme(legend.position = "bottom")+
+  ggtitle("Samaple size per scenario, per method")+
+  facet_wrap(~M2)
+
+pdf("ss_perscenario.pdf")
+ss.full.plot.res
+dev.off()
+
+
+dt.ss.diff <-dt.full.sum%>%
+  mutate(N.Wald.FM=abs(N.Wald-N.FM),
+         N.Wald.WN=abs(N.Wald-N.WN),
+         N.FM.WN=abs(N.WN-N.FM))
+
+ss.full.plot.diff <- dt.ss.diff%>%select(p_C, M2, N.Wald.FM, N.Wald.WN, N.FM.WN)%>%
+  melt(id.vars = c("p_C","M2"))%>%
+  mutate(Method = case_when(variable == "N.Wald.FM" ~ "Wald vs FM",
+                            variable == "N.Wald.WN" ~ "Wald vs WN",
+                            variable == "N.FM.WN"   ~ "FM vs WN"))%>%
+  select(-variable)%>%
+  rename(ss = value)
+
+ss.full.plot.res.diff <- ggplot(data = ss.full.plot.diff, aes(x=p_C, y=ss, fill=Method))+
+  geom_bar(stat = 'identity', position=position_dodge())+
+  #geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
+  theme_bw()+
+  #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
+  #scale_y_continuous(limits = c(0,0.05))+
+  xlab("Proportion of events in active treatment")+
+  ylab("Sample size differences")+
+  theme(legend.position = "bottom")+
+  ggtitle("Samaple size differences per scenario")+
+  facet_wrap(~M2)
+
+pdf("ss_perscenario_diff.pdf")
+ss.full.plot.res.diff
+dev.off()
+
+###################################
+### Type-I Error - Wald 20000 ###
+##################################
+
+dt.full.sum <- readRDS('dtfullsum_wald20000.rds')
+
+type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald)%>%
+  melt(id.vars = c("p_C","M2"))%>%
+  mutate(Method = case_when(variable == "type1.Wald" ~ "Wald"))%>%
+  select(-variable)%>%
+  rename(type1 = value)
+
+type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
+  geom_point(aes(color=Method))+
+  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
+  theme_bw()+
+  #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
+  scale_y_continuous(limits = c(0,0.05))+
+  xlab("Proportion of events in active treatment")+
+  ylab("Type-I error")+
+  theme(legend.position = "bottom")+
+  ggtitle("Type-I errors for 20000 simulations")+
+  facet_wrap(~M2)
+
+pdf("full_wald_type1_20000.pdf")
+type1.full.plot.res
+dev.off()
+
+

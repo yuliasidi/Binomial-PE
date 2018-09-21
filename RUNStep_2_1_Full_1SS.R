@@ -1,35 +1,47 @@
 library(condor)
 
 build_template(
-  file = 'Step_2_1_Full_Data_1SS.R',
+  file = 'Step_2_1_Full_Data_1SSnmin.R',
   args = c('$(Process)'),
-  tag = 'Full1SS',
+  tag = 'Full1SSnmin',
   jobs = 30,
   init_dir = 'jobs/run',
-  template_file = 'Full1SS.condor',
+  template_file = 'Full1SSnmin.condor',
   input_files = c('../myfiles/lib/','Step_0_init.R', 'PE_Bin_PD_Functions.R',
                   'SS_power90nmin.rds'),
   job_type = 'standard')
 
+build_template(
+  file = 'Step_2_1_Full_Data_1SSnmax.R',
+  args = c('$(Process)'),
+  tag = 'Full1SSnmax',
+  jobs = 30,
+  init_dir = 'jobs/run',
+  template_file = 'Full1SSnmax.condor',
+  input_files = c('../myfiles/lib/','Step_0_init.R', 'PE_Bin_PD_Functions.R',
+                  'SS_power90nmax.rds'),
+  job_type = 'standard')
 
 library(ssh)
 
 session <- ssh_connect(Sys.getenv('UCONN_USER'))
 
 ssh::scp_upload(session,
-                files = c('Step_2_1_Full_Data_1SS.R','Full1SS.condor'),
+                files = c('Step_2_1_Full_Data_1SSnmin.R','Full1SSnmin.condor',
+                          'Step_2_1_Full_Data_1SSnmax.R','Full1SSnmax.condor'),
                 to = '~'
 )
 
-condor::create_dirs(session, file = 'Full1SS.condor')
+condor::create_dirs(session, file = 'Full1SSnmin.condor')
 
 ssh::scp_upload(session,
                 files = c('Step_0_init.R','PE_Bin_PD_Functions.R',
-                          'SS_power90nmin.rds'),
+                          'SS_power90nmin.rds','SS_power90nmax.rds'),
                 to = '~/jobs/run'
 )
 
-condor::condor_submit(session,'Full1SS.condor',sleeptime='30m')
+condor::condor_submit(session,'Full1SSnmin.condor',sleeptime='10m')
+condor::condor_submit(session,'Full1SSnmax.condor',sleeptime='10m')
 
 condor::condor_q(session)
 

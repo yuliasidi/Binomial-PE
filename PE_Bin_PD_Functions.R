@@ -31,14 +31,16 @@ ni.d <- function(N_T,N_C,p_T,p_C){
 }
 
 # Produces point estimate and Wald CI for difference in proportions & test H
-Wald.CI <- function(df, n, M2){
-  
+Wald.CI <- function(df, M2, y){
   df%>%
     group_by(sim.id, trt)%>%
-    summarise(phat = mean(y))%>%
-    dcast(sim.id ~ trt, value.var = "phat")%>%
-    mutate(phat.d = C-T, ci.l = C-T - qnorm(1-alpha)*sqrt(C*(1-C)/(n/2)+T*(1-T)/(n/2)),
-           ci.u = C-T + qnorm(1-alpha)*sqrt(C*(1-C)/(n/2)+T*(1-T)/(n/2)),
+    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
+    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
+    mutate(phat.d = C_phat-T_phat, 
+           ci.l = C_phat-T_phat - qnorm(1-alpha)*sqrt(C_phat*(1-C_phat)/(C_n)+
+                                                        T_phat*(1-T_phat)/(T_n)),
+           ci.u = C_phat-T_phat + qnorm(1-alpha)*sqrt(C_phat*(1-C_phat)/(C_n)+
+                                                        T_phat*(1-T_phat)/(T_n)),
            reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
 }
 
@@ -428,4 +430,122 @@ mnar.fun <- function(df){
                                    TRUE ~ as.numeric(y)))
   
   
+}
+
+#model that generates missing data
+miss.fun <- function(df, b.trt = log(1), b.y = log(1), b.X = log(1), do = 0.1){
+  tmp <- df%>%
+    dplyr::group_by(sim.id)%>%
+    dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
+                                   TRUE ~ 0),
+                  etrt = mean(trtn),
+                  eX = mean(X)/10,
+                  ey = mean(y),
+                  b.trt = b.trt,
+                  b.y = b.y,
+                  b.X = b.X,
+                  int = -log(1/do-1) - b.trt*etrt - b.y*ey - b.X*eX,
+                  p = 1/(1+exp(-1*(int + b.trt*trtn + b.y*y + b.X*X/10))))
+  
+  out <- tmp%>%
+    dplyr::left_join(tmp%>%
+                       sample_frac(do, weight = p)%>%
+                       mutate(r = 1)%>%
+                       select(sim.id, pat_id, r), by =c('sim.id','pat_id'))%>%
+    dplyr::mutate(r = ifelse(is.na(r),0,r),
+                  y.m = ifelse(r==1,as.numeric(NA),y))
+  
+  return(out)
+}
+
+#check for amount of missing data per simulation
+check.miss <- function(df, do){
+  df%>%
+    group_by(sim.id)%>%
+    summarise(rm = round(mean(r),2) - do)%>%
+    ungroup(sim.id)%>%
+    summarise(r.all.check = sum(rm))
+}
+
+check.do <- function(df){
+  df%>%
+    dplyr::mutate(do5.H1 = purrr::map2(t.H1.m5, 0.05, check.miss),
+                  do5.H1 = purrr::map_dbl(do5.H1, as.numeric),
+                  do10.H1 = purrr::map2(t.H1.m10, 0.10, check.miss),
+                  do10.H1 = purrr::map_dbl(do10.H1, as.numeric),
+                  do15.H1 = purrr::map2(t.H1.m15, 0.15, check.miss),
+                  do15.H1 = purrr::map_dbl(do15.H1, as.numeric),
+                  do20.H1 = purrr::map2(t.H1.m20, 0.20, check.miss),
+                  do20.H1 = purrr::map_dbl(do20.H1, as.numeric),
+                  do25.H1 = purrr::map2(t.H1.m25, 0.25, check.miss),
+                  do25.H1 = purrr::map_dbl(do25.H1, as.numeric),
+                  do5.H0 = purrr::map2(t.H0.m5, 0.05, check.miss),
+                  do5.H0 = purrr::map_dbl(do5.H0, as.numeric),
+                  do10.H0 = purrr::map2(t.H0.m10, 0.10, check.miss),
+                  do10.H0 = purrr::map_dbl(do10.H0, as.numeric),
+                  do15.H0 = purrr::map2(t.H0.m15, 0.15, check.miss),
+                  do15.H0 = purrr::map_dbl(do15.H0, as.numeric),
+                  do20.H0 = purrr::map2(t.H0.m20, 0.20, check.miss),
+                  do20.H0 = purrr::map_dbl(do20.H0, as.numeric),
+                  do25.H0 = purrr::map2(t.H0.m25, 0.25, check.miss),
+                  do25.H0 = purrr::map_dbl(do25.H0, as.numeric)
+                  
+    )%>%
+    dplyr::select(scenario.id, do5.H0, do10.H0, do15.H0, do20.H0, do25.H0,
+                  do5.H1, do10.H1, do15.H1, do20.H1, do25.H1)
+}
+
+#function that applied the missingness model
+miss.apply <- function(df, b.trt=log(1), b.y=log(1), b.X=log(1)){
+  df%>%
+    dplyr::mutate(t.H0.m5 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.05), 
+                                        miss.fun),
+                  t.H0.m10 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.10), 
+                                         miss.fun),
+                  t.H0.m15 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.15), 
+                                         miss.fun),
+                  t.H0.m20 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.20), 
+                                         miss.fun),
+                  t.H0.m25 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.25), 
+                                         miss.fun),
+                  t.H1.m5 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.05), 
+                                        miss.fun),
+                  t.H1.m10 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.10), 
+                                         miss.fun),
+                  t.H1.m15 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.15), 
+                                         miss.fun),
+                  t.H1.m20 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.20), 
+                                         miss.fun),
+                  t.H1.m25 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.25), 
+                                         miss.fun))%>%
+    dplyr::select(scenario.id, M2, p_T, t.H0.m5, t.H0.m10, t.H0.m15, t.H0.m20, t.H0.m25,
+                  t.H1.m5, t.H1.m10, t.H1.m15, t.H1.m20, t.H1.m25)
+} 
+
+#check missing mechanism
+check.mech <-function(df){
+  df%>%
+    dplyr::mutate(mech.H0.m5  = purrr::map(t.H0.m5 , check.mech.p),
+                  mech.H0.m10 = purrr::map(t.H0.m10, check.mech.p),
+                  mech.H0.m15 = purrr::map(t.H0.m15, check.mech.p),
+                  mech.H0.m20 = purrr::map(t.H0.m20, check.mech.p),
+                  mech.H0.m25 = purrr::map(t.H0.m25, check.mech.p),
+                  mech.H1.m5  = purrr::map(t.H1.m5 , check.mech.p),
+                  mech.H1.m10 = purrr::map(t.H1.m10, check.mech.p),
+                  mech.H1.m15 = purrr::map(t.H1.m15, check.mech.p),
+                  mech.H1.m20 = purrr::map(t.H1.m20, check.mech.p),
+                  mech.H1.m25 = purrr::map(t.H1.m25, check.mech.p))%>%
+    dplyr::select(scenario.id, mech.H0.m5, mech.H0.m10, mech.H0.m15, mech.H0.m20, mech.H0.m25,
+                  mech.H1.m5, mech.H1.m10, mech.H1.m15, mech.H1.m20, mech.H1.m25) 
+}
+
+
+check.mech.p <- function(df){
+  df%>%
+    dplyr::mutate(rp = round(p,2))%>%
+    dplyr::group_by(sim.id, rp)%>%
+    dplyr::summarise(rm = mean(r))%>%
+    dplyr::ungroup(sim.id, rp)%>%
+    dplyr::filter(sim.id==sample(n.sim,1)|sim.id==sample(n.sim,1))%>%
+    dplyr::select(sim.id, rp, rm)
 }
