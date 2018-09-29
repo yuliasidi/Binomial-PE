@@ -19,14 +19,10 @@ idx <- as.numeric(args[length(args)])+1
 
 SS <- readRDS(file = "SS_power90FM.rds")
 
-
-# # of simulated studies
-n.sim <- 10000
-
 #########################################################
 ########      Generate Patient Level Data     ###########
 #########################################################
-set.seed(98755)
+set.seed(10+idx)
 
 SS.idx <- SS%>%
   dplyr::slice(idx)
@@ -59,7 +55,7 @@ check.full <- dt.full%>%
   dplyr::mutate(c.H1 = pmap(list(t.H1, p_C, p_T, M2 = 0) , check_p))%>%
   dplyr::select(scenario.id, c.H0, c.H1)
 
-saveRDS(check.full, sprintf('check_pfm_%02d.rds',idx))
+saveRDS(check.full, sprintf('check_pfm_%d.rds',idx))
 
 ######################################
 ###### Test NI by CI approach ########
@@ -111,8 +107,8 @@ dt.full.sum <- dt.full%>%
 #saveRDS(dt.full.sum, file = sprintf('dtfullsumnmax_%02d.rds',idx))
 #saveRDS(dt.full.X, file = sprintf('dtfullnmax_%02d.rds',idx))
 
-saveRDS(dt.full.sum, file = sprintf('dtfullsumfm_%02d.rds',idx))
-saveRDS(dt.full.X, file = sprintf('dtfullfm_%02d.rds',idx))
+saveRDS(dt.full.sum, file = sprintf('dtfullsumfm_%d.rds',idx))
+saveRDS(dt.full.X, file = sprintf('dtfullfm_%d.rds',idx))
 
 
 

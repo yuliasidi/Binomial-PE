@@ -21,9 +21,6 @@ idx <- as.numeric(args[length(args)])+1
 SS <- readRDS(file = "SS_power90nmin.rds")
 
 
-# # of simulated studies
-n.sim <- 10000
-
 #########################################################
 ########      Generate Patient Level Data     ###########
 #########################################################

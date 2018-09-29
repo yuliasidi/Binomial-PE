@@ -19,14 +19,10 @@ idx <- as.numeric(args[length(args)])+1
 
 SS <- readRDS(file = "SS_power90WN.rds")
 
-
-# # of simulated studies
-n.sim <- 10000
-
 #########################################################
 ########      Generate Patient Level Data     ###########
 #########################################################
-set.seed(98755)
+set.seed(10+idx)
 
 SS.idx <- SS%>%
   dplyr::slice(idx)
@@ -59,7 +55,7 @@ check.full <- dt.full%>%
   dplyr::mutate(c.H1 = pmap(list(t.H1, p_C, p_T, M2 = 0) , check_p))%>%
   dplyr::select(scenario.id, c.H0, c.H1)
 
-saveRDS(check.full, sprintf('check_pwn_%02d.rds',idx))
+saveRDS(check.full, sprintf('check_pwn_%d.rds',idx))
 
 ######################################
 ###### Test NI by CI approach ########
@@ -108,8 +104,8 @@ dt.full.sum <- dt.full%>%
          power.WN   = map_dbl(power.WN  , as.numeric),
          n.sim = n.sim)
 
-saveRDS(dt.full.sum, file = sprintf('dtfullsumwn_%02d.rds',idx))
-saveRDS(dt.full.X, file = sprintf('dtfullwn_%02d.rds',idx))
+saveRDS(dt.full.sum, file = sprintf('dtfullsumwn_%d.rds',idx))
+saveRDS(dt.full.X, file = sprintf('dtfullwn_%d.rds',idx))
 
 
 
