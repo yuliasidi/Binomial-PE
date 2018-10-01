@@ -3,7 +3,7 @@
 source('Step_0_init.R')
 
 args <- commandArgs()
-idx <- as.numeric(args[length(args)])+1
+idx <- as.numeric(args[length(args)])
 .libPaths('ysidi/lib')
 
 # Fixed margin approach for proportions difference.
@@ -25,7 +25,7 @@ SS <- readRDS(file = "SS_power90Wald.rds")
 set.seed(10+idx)
 
 SS.idx <- SS%>%
-  dplyr::slice(idx)
+  dplyr::slice(idx+1)
 
 # generate patient level data for under H1
 dt.full <- SS.idx%>%

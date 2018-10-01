@@ -46,22 +46,21 @@ SS.plotly.out <- plotly::ggplotly(SS.plot.out)
 htmlwidgets::saveWidget(SS.plotly.out,"SS_plot.html")  
   
 
-###########################
-### Type-I Error - NMax ###
-##########################
+###################################
+### Type-I Error - NMax vs Nmin ###
+###################################
 
-dt.full.sum <- readRDS('dtfullsum_nmax.rds')
+dt.nmax <- readRDS('dtfullsum_nmax10000.rds')
+dt.nmin <- readRDS('dtfullsum_nmin10000.rds')
 
-type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
-  melt(id.vars = c("p_C","M2"))%>%
-  mutate(Method = case_when(variable == "type1.Wald" ~ "Wald",
-                            variable == "type1.FM"   ~ "Farrington-Manning",
-                            variable == "type1.WN"   ~ "Wilson-Newcombe"))%>%
-  select(-variable)%>%
-  rename(type1 = value)
+dt.maxmin <- dt.nmax%>%
+  dplyr::mutate(ss = 'Nmax')%>%
+  dplyr::bind_rows(dt.nmin%>%
+                     dplyr::mutate(ss = 'Nmin'))
 
-type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
-  geom_point(aes(color=Method))+
+type1.wald.plot <- dt.maxmin%>%
+  ggplot(aes(x=p_C, y=type1.Wald, group=ss))+
+  geom_point(aes(color=ss))+
   geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
   theme_bw()+
   #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
@@ -69,73 +68,49 @@ type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=
   xlab("Proportion of events in active treatment")+
   ylab("Type-I error")+
   theme(legend.position = "bottom")+
-  ggtitle("Type-I errors for 10000 simulations and Nmax")+
+  ggtitle("Type-I errors for 10000 simulations for Wald")+
   facet_wrap(~M2)
 
-temp <- plotly::ggplotly(type1.full.plot.res)
-
-htmlwidgets::saveWidget(temp,"temp.html")  
-
-pdf("full_nmax_type1_10000.pdf")
-type1.full.plot.res
-dev.off()
-
-
-####################
-### Power ###
-####################
-
-dt.full.sum <- readRDS('dtfullsum_nmax.rds')
-
-pow1 <- ggplot(data=dt.full.sum, aes(x=power.Wald, y=power.FM))+ 
-  geom_point()+
-  geom_abline()+
+type1.fm.plot <- dt.maxmin%>%
+  ggplot(aes(x=p_C, y=type1.FM, group=ss))+
+  geom_point(aes(color=ss))+
+  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
   theme_bw()+
-  xlab("Empirical Power Wald")+
-  ylab("Empirical Power Farrington-Manning")+
-  ggtitle("Empirical power Wald vs FM - 10000 simulations and Nmax") +
-  scale_x_continuous(limits=c(0.85,.95))+
-  scale_y_continuous(limits=c(0.85,.95))
-  
-pow2 <- ggplot(data=dt.full.sum, aes(x=power.Wald, y=power.WN))+ 
-  geom_point()+
-  geom_abline()+
+  #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
+  scale_y_continuous(limits = c(0,0.05))+
+  xlab("Proportion of events in active treatment")+
+  ylab("Type-I error")+
+  theme(legend.position = "bottom")+
+  ggtitle("Type-I errors for 10000 simulations for FM")+
+  facet_wrap(~M2)
+
+type1.wn.plot <- dt.maxmin%>%
+  ggplot(aes(x=p_C, y=type1.WN, group=ss))+
+  geom_point(aes(color=ss))+
+  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
   theme_bw()+
-  xlab("Empirical Power Wald")+
-  ylab("Empirical Power Newcombe-Wilson")+
-  ggtitle("Empirical power Wald vs NW - 10000 simulations and Nmax") +
-  scale_x_continuous(limits=c(0.85,.95))+
-  scale_y_continuous(limits=c(0.85,.95))
+  #scale_x_continuous(labels = as.character(p_C), breaks = p_C)+
+  scale_y_continuous(limits = c(0,0.05))+
+  xlab("Proportion of events in active treatment")+
+  ylab("Type-I error")+
+  theme(legend.position = "bottom")+
+  ggtitle("Type-I errors for 10000 simulations for WN")+
+  facet_wrap(~M2)
 
-pow3 <- ggplot(data=dt.full.sum, aes(x=power.FM, y=power.WN))+ 
-  geom_point()+
-  geom_abline()+
-  theme_bw()+
-  xlab("Empirical Farrington-Manning")+
-  ylab("Empirical Power Newcombe-Wilson")+
-  ggtitle("Empirical power Wald vs NW - 10000 simulations and Nmax") +
-  scale_x_continuous(limits=c(0.85,.95))+
-  scale_y_continuous(limits=c(0.85,.95))
 
-pdf("fullpower1_nmax_10000.pdf")
-pow1
+pdf("minmax_type1_wald.pdf")
+type1.wald.plot
 dev.off()
 
-pdf("fullpower2_nmax_10000.pdf")
-pow2
+pdf("minmax_type1_fm.pdf")
+type1.fm.plot
 dev.off()
 
-pdf("fullpower3_nmax_10000.pdf")
-pow3
+pdf("minmax_type1_wn.pdf")
+type1.wn.plot
 dev.off()
 
-###########################
-### Type-I Error - NMin ###
-##########################
-
-dt.full.sum <- readRDS('dtfullsum_nmin.rds')
-
-type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
+type1.min.plot <- dt.nmin%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
   melt(id.vars = c("p_C","M2"))%>%
   mutate(Method = case_when(variable == "type1.Wald" ~ "Wald",
                             variable == "type1.FM"   ~ "Farrington-Manning",
@@ -143,7 +118,7 @@ type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)
   select(-variable)%>%
   rename(type1 = value)
 
-type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
+type1.min.plott <- type1.min.plot%>%ggplot(aes(x=p_C, y=type1, group=Method))+
   geom_point(aes(color=Method))+
   geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
   theme_bw()+
@@ -155,21 +130,11 @@ type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=
   ggtitle("Type-I errors for 10000 simulations and Nmin")+
   facet_wrap(~M2)
 
-temp <- plotly::ggplotly(type1.full.plot.res)
-
-htmlwidgets::saveWidget(temp,"temp.html")  
-
 pdf("full_nmin_type1_10000.pdf")
-type1.full.plot.res
+type1.min.plott
 dev.off()
 
-##################################
-### Type-I Error - NMin 100000 ###
-#################################
-
-dt.full.sum <- readRDS('dtfullsum_nmin100000.rds')
-
-type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
+type1.max.plot <- dt.nmax%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
   melt(id.vars = c("p_C","M2"))%>%
   mutate(Method = case_when(variable == "type1.Wald" ~ "Wald",
                             variable == "type1.FM"   ~ "Farrington-Manning",
@@ -177,7 +142,7 @@ type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)
   select(-variable)%>%
   rename(type1 = value)
 
-type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
+type1.max.plott <- type1.max.plot%>%ggplot(aes(x=p_C, y=type1, group=Method))+
   geom_point(aes(color=Method))+
   geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
   theme_bw()+
@@ -186,16 +151,62 @@ type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=
   xlab("Proportion of events in active treatment")+
   ylab("Type-I error")+
   theme(legend.position = "bottom")+
-  ggtitle("Type-I errors for 100000 simulations and Nmin")+
+  ggtitle("Type-I errors for 10000 simulations and Nmax")+
   facet_wrap(~M2)
 
-temp <- plotly::ggplotly(type1.full.plot.res)
-
-htmlwidgets::saveWidget(temp,"temp.html")  
-
-pdf("full_nmin_type1_100000.pdf")
-type1.full.plot.res
+pdf("full_nmax_type1_10000.pdf")
+type1.max.plott
 dev.off()
+
+####################
+### Power Each  ###
+####################
+
+dt.full.sum <- readRDS('dtfullsum_each.rds')
+
+pow1 <- ggplot(data=dt.full.sum, aes(x=power.Wald, y=power.FM))+ 
+  geom_point()+
+  geom_abline()+
+  theme_bw()+
+  xlab("Empirical Power Wald")+
+  ylab("Empirical Power Farrington-Manning")+
+  ggtitle("Empirical power Wald vs FM - 10000 simulations") +
+  scale_x_continuous(limits=c(0.85,.95))+
+  scale_y_continuous(limits=c(0.85,.95))
+  
+pow2 <- ggplot(data=dt.full.sum, aes(x=power.Wald, y=power.WN))+ 
+  geom_point()+
+  geom_abline()+
+  theme_bw()+
+  xlab("Empirical Power Wald")+
+  ylab("Empirical Power Newcombe-Wilson")+
+  ggtitle("Empirical power Wald vs NW - 10000 simulations") +
+  scale_x_continuous(limits=c(0.85,.95))+
+  scale_y_continuous(limits=c(0.85,.95))
+
+pow3 <- ggplot(data=dt.full.sum, aes(x=power.FM, y=power.WN))+ 
+  geom_point()+
+  geom_abline()+
+  theme_bw()+
+  xlab("Empirical Farrington-Manning")+
+  ylab("Empirical Power Newcombe-Wilson")+
+  ggtitle("Empirical power Wald vs NW - 10000 simulations") +
+  scale_x_continuous(limits=c(0.85,.95))+
+  scale_y_continuous(limits=c(0.85,.95))
+
+pdf("fullpower1_each_10000.pdf")
+pow1
+dev.off()
+
+pdf("fullpower2_each_10000.pdf")
+pow2
+dev.off()
+
+pdf("fullpower3_each_10000.pdf")
+pow3
+dev.off()
+
+
 
 ###################################
 ### Type-I Error - N Each 10000 ###

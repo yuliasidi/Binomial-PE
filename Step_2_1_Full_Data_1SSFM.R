@@ -3,7 +3,7 @@
 source('Step_0_init.R')
 
 args <- commandArgs()
-idx <- as.numeric(args[length(args)])+1
+idx <- as.numeric(args[length(args)])
 .libPaths('ysidi/lib')
 
 # Fixed margin approach for proportions difference.
@@ -25,7 +25,7 @@ SS <- readRDS(file = "SS_power90FM.rds")
 set.seed(10+idx)
 
 SS.idx <- SS%>%
-  dplyr::slice(idx)
+  dplyr::slice(idx+1)
 
 # generate patient level data for under H1
 dt.full <- SS.idx%>%
@@ -62,8 +62,8 @@ saveRDS(check.full, sprintf('check_pfm_%d.rds',idx))
 ######################################
 
 dt.full <- dt.full%>%
-  mutate(FM.H0 = pmap(list(df=t.H0, n=N.total, M2 =  M2), FM.CI),
-         FM.H1 = pmap(list(df=t.H1, n=N.total, M2 =  M2), FM.CI))
+  mutate(FM.H0 = pmap(list(df=t.H0, M2 =  M2), FM.CI, y = y),
+         FM.H1 = pmap(list(df=t.H1, M2 =  M2), FM.CI, y = y))
 
 dt.full <- dt.full%>%
   mutate(type1.FM   = map(FM.H0,   reject.H0),

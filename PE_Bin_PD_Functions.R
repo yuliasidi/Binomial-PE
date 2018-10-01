@@ -45,16 +45,18 @@ Wald.CI <- function(df, M2, y){
 }
 
 # Produces point estimate and FM CI for difference in proportions & test H
-FM.CI <- function(df, n, M2){
+FM.CI <- function(df, M2, y){
   df%>%
     group_by(sim.id, trt)%>%
-    summarise(phat = mean(y))%>%
-    dcast(sim.id ~ trt, value.var = "phat")%>%
-    rename(p_T = T, p_C = C)%>%
+    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
+    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
+    rename(p_T = T_phat, p_C = C_phat)%>%
     p.rmle.fm(M2 = M2)%>%
     mutate(phat.d = p_C-p_T, 
-           ci.l = phat.d - qnorm(1-alpha)*sqrt(p_C.rmle*(1-p_C.rmle)/(n/2)+p_T.rmle*(1-p_T.rmle)/(n/2)),
-           ci.u = phat.d + qnorm(1-alpha)*sqrt(p_C.rmle*(1-p_C.rmle)/(n/2)+p_T.rmle*(1-p_T.rmle)/(n/2)),
+           ci.l = phat.d - qnorm(1-alpha)*sqrt(p_C.rmle*(1-p_C.rmle)/C_n+
+                                                 p_T.rmle*(1-p_T.rmle)/T_n),
+           ci.u = phat.d + qnorm(1-alpha)*sqrt(p_C.rmle*(1-p_C.rmle)/C_n+
+                                                 p_T.rmle*(1-p_T.rmle)/T_n),
            reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
 }
 
@@ -65,22 +67,25 @@ reject.H0 <- function(df){
 
 
 # Calculated Wilson-Newcombe CI
-wn.CI <- function(df, N_C, N_T, M2, alpha){
+wn.CI <- function(df, M2, alpha, y){
   
   df%>%
     group_by(sim.id, trt)%>%
-    summarise(phat = mean(y))%>%
-    dcast(sim.id ~ trt, value.var = "phat")%>%
-    dplyr::rename(phat.C = C, phat.T = T)%>%
+    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
+    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
     dplyr::mutate(z = qnorm(1-alpha),
-                  l.C = (phat.C + z^2/(2*N_C) - z*sqrt((phat.C*(1-phat.C)+z^2/(4*N_C))/N_C))/(1+z^2/N_C),
-                  u.C = (phat.C + z^2/(2*N_C) + z*sqrt((phat.C*(1-phat.C)+z^2/(4*N_C))/N_C))/(1+z^2/N_C),
+                  l.C = (C_phat + z^2/(2*C_n) - 
+                           z*sqrt((C_phat*(1-C_phat)+z^2/(4*C_n))/C_n))/(1+z^2/C_n),
+                  u.C = (C_phat + z^2/(2*C_n) + 
+                           z*sqrt((C_phat*(1-C_phat)+z^2/(4*C_n))/C_n))/(1+z^2/C_n),
                   
-                  l.T = (phat.T + z^2/(2*N_T) - z*sqrt((phat.T*(1-phat.T)+z^2/(4*N_T))/N_T))/(1+z^2/N_T),
-                  u.T = (phat.T + z^2/(2*N_T) + z*sqrt((phat.T*(1-phat.T)+z^2/(4*N_T))/N_T))/(1+z^2/N_T),
+                  l.T = (T_phat + z^2/(2*T_n) - 
+                           z*sqrt((T_phat*(1-T_phat)+z^2/(4*T_n))/T_n))/(1+z^2/T_n),
+                  u.T = (T_phat + z^2/(2*T_n) + 
+                           z*sqrt((T_phat*(1-T_phat)+z^2/(4*T_n))/T_n))/(1+z^2/T_n),
                   
-                  ci.l = phat.C-phat.T-sqrt((phat.C-l.C)^2+(u.T-phat.T)^2),
-                  ci.u = phat.C-phat.T+sqrt((u.C-phat.C)^2+(phat.T-l.T)^2),
+                  ci.l = C_phat-T_phat-sqrt((C_phat-l.C)^2+(u.T-T_phat)^2),
+                  ci.u = C_phat-T_phat+sqrt((u.C-C_phat)^2+(T_phat-l.T)^2),
                   reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
 }
 
