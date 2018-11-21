@@ -67,7 +67,7 @@ reject.H0 <- function(df){
 
 
 # Calculated Wilson-Newcombe CI
-wn.CI <- function(df, M2, alpha, y){
+wn.CI <- function(df, M2, y){
   
   df%>%
     group_by(sim.id, trt)%>%
@@ -323,36 +323,43 @@ power_glm <- function(df){
 }
 
 # Adds continutios variable X from N(4,1), such that the correlation is equal to rho
-add.X <- function(df, rho=0.3){
-  df1 <- df%>%
+add.X <- function(df, rho=0.3, rho.bound){
+  df.C <- df%>%
+    filter(trt=="C")%>%
+    mutate(X = rnorm(length(trt),4,1))%>%
+    mutate(X = case_when(X<0 ~ 0, 
+                         X>10 ~ 10, 
+                         TRUE ~ as.numeric(X)))
+  df.T <- df%>%
+    filter(trt=="T")%>%
     mutate(X = rnorm(length(trt),4,1))%>%
     mutate(X = case_when(X<0 ~ 0, 
                          X>10 ~ 10, 
                          TRUE ~ as.numeric(X)))
   
-  df2 <- bind_cols(df1%>%select(-X)%>%arrange(y), df1%>%select(-y)%>%arrange(X)%>%select(X))
-  rho.bound <-cor(df2$y, df2$X)
+  t.order.C <- df.C%>%
+    slice(1:floor(abs(rho)*n()/abs(rho.bound)))
+  t.asis.C  <- df.C%>%
+    slice(floor(abs(rho)*n()/abs(rho.bound))+1:n())
   
-  t.order.C <- df1%>%
-    filter(trt=="C")%>%
-    slice(1:floor(rho*n()/rho.bound))
-  t.asis.C  <- df1%>%
-    filter(trt=="C")%>%
-    slice(floor(rho*n()/rho.bound)+1:n())
+  t.order.T <- df.T%>%
+    slice(1:floor(abs(rho)*n()/abs(rho.bound)))
+  t.asis.T  <- df.T%>%
+    slice(floor(abs(rho)*n()/abs(rho.bound))+1:n())
   
-  t.order.T <- df1%>%
-    filter(trt=="T")%>%
-    slice(1:floor(rho*n()/rho.bound))
-  t.asis.T  <- df1%>%
-    filter(trt=="T")%>%
-    slice(floor(rho*n()/rho.bound)+1:n())
+  if (rho.bound>0){
+    t.ordered.C <- bind_cols(t.order.C%>%select(-X)%>%arrange(y), 
+                             t.order.C%>%select(X)%>%arrange(X))
+    t.ordered.T <- bind_cols(t.order.T%>%select(-X)%>%arrange(y), 
+                             t.order.T%>%select(X)%>%arrange(X))
+  } 
   
-  
-  t.ordered.C <- bind_cols(t.order.C%>%select(-X)%>%arrange(y), 
-                           t.order.C%>%select(-y)%>%arrange(X)%>%select(X))
-  t.ordered.T <- bind_cols(t.order.T%>%select(-X)%>%arrange(y), 
-                           t.order.T%>%select(-y)%>%arrange(X)%>%select(X))
-  
+  if (rho.bound<0){
+    t.ordered.C <- bind_cols(t.order.C%>%select(-X)%>%arrange(desc(y)), 
+                             t.order.C%>%select(-y)%>%arrange(X)%>%select(X))
+    t.ordered.T <- bind_cols(t.order.T%>%select(-X)%>%arrange(desc(y)), 
+                             t.order.T%>%select(-y)%>%arrange(X)%>%select(X))
+  }
   
   df3 <- bind_rows(t.ordered.T, t.ordered.C, t.asis.T, t.asis.C)
   
@@ -371,7 +378,7 @@ check_p <- function(df, p_C, p_T, M2){
                      sd.c.p_C = round(sqrt(var(c.p_C)),2), sd.c.p_T = round(sqrt(var(c.p_T)),2))
 }
 
-# Function that checks simulateed correlation
+# Function that checks simulated correlation
 
 check_rho <- function(df){
   df%>%
@@ -381,7 +388,7 @@ check_rho <- function(df){
     }))%>%
     dplyr::select(-data)%>%
     tidyr::unnest()%>%
-    dplyr::summarise(mean.cor = round(mean(cor),2), sd = round(sqrt(var(cor)),2))
+    dplyr::summarise(mean.cor = round(mean(cor),4), sd = round(sqrt(var(cor)),4))
 }
 
 # Function which imposes MAR by X (BL diesase status available for all the patients)
@@ -440,25 +447,30 @@ mnar.fun <- function(df){
 #model that generates missing data
 miss.fun <- function(df, b.trt = log(1), b.y = log(1), b.X = log(1), do = 0.1){
   tmp <- df%>%
-    dplyr::group_by(sim.id)%>%
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
                                    TRUE ~ 0),
-                  etrt = mean(trtn),
-                  eX = mean(X)/10,
-                  ey = mean(y),
                   b.trt = b.trt,
                   b.y = b.y,
-                  b.X = b.X,
-                  int = -log(1/do-1) - b.trt*etrt - b.y*ey - b.X*eX,
-                  p = 1/(1+exp(-1*(int + b.trt*trtn + b.y*y + b.X*X/10))))
+                  b.X = b.X)
+  tmp1 <- tmp%>%
+    dplyr::group_by(sim.id)%>%
+    dplyr::summarise(etrt = mean(trtn),
+                     eX = mean(X)/10,
+                     ey = mean(y))%>%
+    dplyr::mutate(int = -log(1/do-1) - b.trt*etrt - b.y*ey - b.X*eX)
+  tmp2 <- dplyr::left_join(tmp, tmp1, by="sim.id")%>%
+    dplyr::mutate(p = 1/(1+exp(-1*(int + b.trt*trtn + b.y*y + b.X*X/10))))
   
-  out <- tmp%>%
-    dplyr::left_join(tmp%>%
-                       sample_frac(do, weight = p)%>%
-                       mutate(r = 1)%>%
-                       select(sim.id, pat_id, r), by =c('sim.id','pat_id'))%>%
+  sampl.miss <- tmp2%>%
+    group_by(sim.id)%>%
+    sample_frac(do, weight = p)%>%
+    mutate(r = 1)%>%
+    select(sim.id, pat_id, r)
+  
+  out <- dplyr::left_join(tmp2,sampl.miss, by =c('sim.id','pat_id'))%>%
     dplyr::mutate(r = ifelse(is.na(r),0,r),
-                  y.m = ifelse(r==1,as.numeric(NA),y))
+                  y.m = ifelse(r==1,as.numeric(NA),y))#%>%
+   #dplyr::select(-y, -etrt, -eX, -ey, -b.trt, -b.y, -b.X, -int, -trtn)
   
   return(out)
 }
@@ -472,59 +484,14 @@ check.miss <- function(df, do){
     summarise(r.all.check = sum(rm))
 }
 
-check.do <- function(df){
-  df%>%
-    dplyr::mutate(do5.H1 = purrr::map2(t.H1.m5, 0.05, check.miss),
-                  do5.H1 = purrr::map_dbl(do5.H1, as.numeric),
-                  do10.H1 = purrr::map2(t.H1.m10, 0.10, check.miss),
-                  do10.H1 = purrr::map_dbl(do10.H1, as.numeric),
-                  do15.H1 = purrr::map2(t.H1.m15, 0.15, check.miss),
-                  do15.H1 = purrr::map_dbl(do15.H1, as.numeric),
-                  do20.H1 = purrr::map2(t.H1.m20, 0.20, check.miss),
-                  do20.H1 = purrr::map_dbl(do20.H1, as.numeric),
-                  do25.H1 = purrr::map2(t.H1.m25, 0.25, check.miss),
-                  do25.H1 = purrr::map_dbl(do25.H1, as.numeric),
-                  do5.H0 = purrr::map2(t.H0.m5, 0.05, check.miss),
-                  do5.H0 = purrr::map_dbl(do5.H0, as.numeric),
-                  do10.H0 = purrr::map2(t.H0.m10, 0.10, check.miss),
-                  do10.H0 = purrr::map_dbl(do10.H0, as.numeric),
-                  do15.H0 = purrr::map2(t.H0.m15, 0.15, check.miss),
-                  do15.H0 = purrr::map_dbl(do15.H0, as.numeric),
-                  do20.H0 = purrr::map2(t.H0.m20, 0.20, check.miss),
-                  do20.H0 = purrr::map_dbl(do20.H0, as.numeric),
-                  do25.H0 = purrr::map2(t.H0.m25, 0.25, check.miss),
-                  do25.H0 = purrr::map_dbl(do25.H0, as.numeric)
-                  
-    )%>%
-    dplyr::select(scenario.id, do5.H0, do10.H0, do15.H0, do20.H0, do25.H0,
-                  do5.H1, do10.H1, do15.H1, do20.H1, do25.H1)
-}
-
 #function that applied the missingness model
-miss.apply <- function(df, b.trt=log(1), b.y=log(1), b.X=log(1)){
+miss.apply.do <- function(df, b.trt=log(1), b.y=log(1), b.X=log(1), do=0.1){
   df%>%
-    dplyr::mutate(t.H0.m5 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.05), 
+    dplyr::mutate(t.H0.m = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = do), 
                                         miss.fun),
-                  t.H0.m10 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.10), 
-                                         miss.fun),
-                  t.H0.m15 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.15), 
-                                         miss.fun),
-                  t.H0.m20 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.20), 
-                                         miss.fun),
-                  t.H0.m25 = purrr::pmap(list(t.H0,b.trt, b.y, b.X, do = 0.25), 
-                                         miss.fun),
-                  t.H1.m5 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.05), 
-                                        miss.fun),
-                  t.H1.m10 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.10), 
-                                         miss.fun),
-                  t.H1.m15 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.15), 
-                                         miss.fun),
-                  t.H1.m20 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.20), 
-                                         miss.fun),
-                  t.H1.m25 = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = 0.25), 
-                                         miss.fun))%>%
-    dplyr::select(scenario.id, M2, p_T, t.H0.m5, t.H0.m10, t.H0.m15, t.H0.m20, t.H0.m25,
-                  t.H1.m5, t.H1.m10, t.H1.m15, t.H1.m20, t.H1.m25)
+                  t.H1.m = purrr::pmap(list(t.H1,b.trt, b.y, b.X, do = do), 
+                                       miss.fun))%>%
+    dplyr::select(scenario.id, M2, p_T, t.H0.m, t.H1.m)
 } 
 
 #check missing mechanism
@@ -554,3 +521,261 @@ check.mech.p <- function(df){
     dplyr::filter(sim.id==sample(n.sim,1)|sim.id==sample(n.sim,1))%>%
     dplyr::select(sim.id, rp, rm)
 }
+
+#read all the files that check do rates in the incomplete data
+read_doch <- function(TYPE, MISSING, PERCENT){
+  purrr::map_df(
+    list.files(path = "output/data", 
+               pattern = sprintf("%sdoch%s%s", TYPE, MISSING, PERCENT),  full.names = TRUE),
+    readRDS)%>%
+    dplyr::mutate(TYPE=sprintf('%s', TYPE), 
+                  MISSING = sprintf('%s', MISSING), 
+                  PERCENT = sprintf('%s', PERCENT))
+} 
+
+#read all the files that check missing mechanisms in the incomplete data
+read_mech <- function(TYPE, MISSING, PERCENT){
+  purrr::map_df(
+    list.files(path = "output/data", 
+               pattern = sprintf("mech%s%s%s", MISSING, TYPE, PERCENT),  full.names = TRUE),
+    readRDS)%>%
+    dplyr::mutate(TYPE=sprintf('%s', TYPE), 
+                  MISSING = sprintf('%s', MISSING), 
+                  PERCENT = sprintf('%s', PERCENT))
+} 
+
+
+#Calculate relative bias and take a mean over the n simulations
+bias.fun <- function(df, M2, y){
+  df%>%
+    group_by(sim.id, trt)%>%
+    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
+    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
+    mutate(bias = (C_phat-T_phat-M2)/M2)%>%
+    dplyr::select(sim.id, bias)%>%
+    dplyr::ungroup(sim.id, trt)%>%
+    summarise(bias.m = mean(bias))
+}
+
+#read all the files that check do rates in the incomplete data
+read_anal <- function(ANAL,TYPE, MISSING, PERCENT){
+  purrr::map_df(
+    list.files(path = "output/data", 
+               pattern = sprintf("%s%s%s%s", ANAL, MISSING, TYPE, PERCENT),  full.names = TRUE),
+    readRDS)%>%
+    dplyr::mutate(TYPE=sprintf('%s', TYPE), 
+                  MISSING = sprintf('%s', MISSING), 
+                  PERCENT = sprintf('%s', PERCENT))
+} 
+
+read_analnew <- function(ANAL,TYPE, MISSING, PERCENT){
+  purrr::map_df(
+    list.files(path = "output/data", 
+               pattern = sprintf("%s%s%snew%s", ANAL, MISSING, TYPE, PERCENT),  full.names = TRUE),
+    readRDS)%>%
+    dplyr::mutate(TYPE=sprintf('%s', TYPE), 
+                  MISSING = sprintf('%s', MISSING), 
+                  PERCENT = sprintf('%s', PERCENT))
+} 
+
+
+#Plot type-I errors for CCA
+type1.cca.plot <- function(df, type = 'wald', missing = 'mcar', title = 'Wald, MCAR', ylim = c(0,0.05)){
+  type1.g <- df%>%
+    dplyr::filter(TYPE== type, MISSING == missing)%>%
+    dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))%>%
+    ggplot2::ggplot(aes(PERCENT, type1)) +
+    geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
+    geom_point(size=0.5) +
+    geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
+    scale_y_continuous(limits = ylim) +
+    facet_wrap(~ scenario.idc) +
+    theme_bw() +
+    xlab("% of Missing Observations")+
+    ylab("Type-I error")+
+    ggtitle(sprintf("Type I Error: %s, CCA Analysis",title))
+  
+  return(type1.g)
+} 
+
+
+#Plot relative bias for CCA
+bias.cca.plot <- function(df, type = 'wald', missing = 'mcar', title = 'Wald, MCAR', ylim = c(-.02,0.02)){
+  bias.g <- df%>%
+    dplyr::filter(TYPE== type, MISSING == missing)%>%
+    dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_T,M2))%>%
+    ggplot2::ggplot(aes(PERCENT, bias)) +
+    geom_segment(aes(x = PERCENT, y = 0, xend = PERCENT, yend = bias)) +
+    geom_point(size=0.5) +
+    scale_y_continuous(limits = ylim) +
+    facet_wrap(~ scenario.idc) +
+    theme_bw() +
+    xlab("% of Missing Observations")+
+    ylab("Relative bias")+
+    ggtitle(sprintf("Relative bias: %s, CCA Analysis",title))
+
+  return(bias.g)
+} 
+
+#generate new df with added X acc to specified rho
+add.X.rho <- function(df, r){
+  df%>%
+    mutate(t.H1.X = map(t.H1, .f = function(df, rho = r){
+      df%>%nest(-sim.id)%>%
+        mutate(t.X = map(data, add.X, rho=r, 
+                         rho.bound=ifelse(r>0,rho.bound.H1.u,rho.bound.H1.l)))%>%
+        select(-data)%>%
+        unnest()
+    }))%>%
+    select(-t.H1)%>%
+    rename(t.H1 = t.H1.X)%>%
+    mutate(t.H0.X = map(t.H0, .f = function(df, rho = r){
+      df%>%nest(-sim.id)%>%
+        mutate(t.X = map(data,add.X, rho=r,
+                         rho.bound=ifelse(r>0,rho.bound.H1.u,rho.bound.H1.l)))%>%
+        select(-data)%>%
+        unnest()
+    }))%>%
+    select(-t.H0)%>%
+    rename(t.H0 = t.H0.X)
+}
+
+#lower correlation bound calcualtion
+bound.l <- function(df){
+  df.T <- df%>%
+    filter(trt=='T')
+  df.C <- df%>%
+    filter(trt=='C')
+  df.sort.T <-bind_cols(df.T%>%select(-X)%>%arrange(desc(y)), 
+                        df.T%>%select(X)%>%arrange(X))
+  df.sort.C <-bind_cols(df.C%>%select(-X)%>%arrange(desc(y)), 
+                        df.C%>%select(X)%>%arrange(X))
+  df.sort <- bind_rows(df.sort.T, df.sort.C)
+  rho.bound <-cor(df.sort$y, df.sort$X, method = "spearman")
+}
+
+#upper correlation bound calcualtion
+bound.u <- function(df){
+  df.T <- df%>%
+    filter(trt=='T')
+  df.C <- df%>%
+    filter(trt=='C')
+  df.sort.T <-bind_cols(df.T%>%select(-X)%>%arrange(y), 
+                        df.T%>%select(X)%>%arrange(X))
+  df.sort.C <-bind_cols(df.C%>%select(-X)%>%arrange(y), 
+                        df.C%>%select(X)%>%arrange(X))
+  df.sort <- bind_rows(df.sort.T, df.sort.C)
+  rho.bound <-cor(df.sort$y, df.sort$X, method = "spearman")
+}
+
+dt.miss.check <-function(df,do){
+  df%>%
+    dplyr::mutate(do.H0 = purrr::map2(t.H0.m, do, check.miss),
+                  do.H0 = purrr::map_dbl(do.H0, as.numeric),
+                  do.H1 = purrr::map2(t.H1.m, do, check.miss),
+                  do.H1 = purrr::map_dbl(do.H1, as.numeric))%>%
+    dplyr::select(-t.H0.m, -t.H1.m)} 
+
+cca.wald.anal <- function(df){
+  df1 <- df%>%
+    dplyr::mutate(t.H0.m1 = map(t.H0.m, .f=function(df){
+      df%>%
+        dplyr::rename(y=y.m)
+    }),
+    t.H1.m1 = map(t.H1.m, .f=function(df){
+      df%>%
+        dplyr::rename(y=y.m)
+    }))%>%
+    dplyr::select(-t.H0.m,-t.H1.m)%>%
+    dplyr::rename(t.H0.m = t.H0.m1, t.H1.m = t.H1.m1)
+  
+  df2 <- df1%>%
+    dplyr::mutate(t.H0.CI = pmap(list(df=t.H0.m, M2 =  M2), Wald.CI),
+                  t.H1.CI = pmap(list(df=t.H1.m, M2 =  M2), Wald.CI),
+                  t.H0.bias = pmap(list(t.H0.m, M2 = M2), bias.fun))
+  
+  df2 <- df2%>%
+    mutate(type1 = map(t.H0.CI, reject.H0),
+           power = map(t.H1.CI, reject.H0))
+  
+  df3 <- df2%>%
+    select(scenario.id, p_T, M2, type1, power, t.H0.bias)%>%
+    mutate(type1 = map_dbl(type1, as.numeric),
+           power = map_dbl(power, as.numeric),
+           bias  = map_dbl(t.H0.bias, as.numeric))%>%
+    dplyr::select(-t.H0.bias)
+  
+  return(df3)
+  
+}
+
+worst.wald.anal <- function(df){
+  df1 <- df%>%
+    dplyr::mutate(t.H0.m1 = map(t.H0.m, .f=function(df){
+      df%>%
+        dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,0))%>%
+        dplyr::select(-y.m)
+    }),
+    t.H1.m1 = map(t.H1.m, .f=function(df){
+      df%>%
+        dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,0))%>%
+        dplyr::select(-y.m)
+    }))%>%
+    dplyr::select(-t.H0.m,-t.H1.m)%>%
+    dplyr::rename(t.H0.m = t.H0.m1, t.H1.m = t.H1.m1)
+  
+  df2 <- df1%>%
+    dplyr::mutate(t.H0.CI = pmap(list(df=t.H0.m, M2 =  M2), Wald.CI),
+                  t.H1.CI = pmap(list(df=t.H1.m, M2 =  M2), Wald.CI),
+                  t.H0.bias = pmap(list(t.H0.m, M2 = M2), bias.fun))
+  
+  df2 <- df2%>%
+    mutate(type1 = map(t.H0.CI, reject.H0),
+           power = map(t.H1.CI, reject.H0))
+  
+  df3 <- df2%>%
+    select(scenario.id, p_T, M2, type1, power, t.H0.bias)%>%
+    mutate(type1 = map_dbl(type1, as.numeric),
+           power = map_dbl(power, as.numeric),
+           bias  = map_dbl(t.H0.bias, as.numeric))%>%
+    dplyr::select(-t.H0.bias)
+  
+  return(df3)
+  
+}
+
+best.wald.anal <- function(df){
+  df1 <- df%>%
+    dplyr::mutate(t.H0.m1 = map(t.H0.m, .f=function(df){
+      df%>%
+        dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,1))%>%
+        dplyr::select(-y.m)
+    }),
+    t.H1.m1 = map(t.H1.m, .f=function(df){
+      df%>%
+        dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,1))%>%
+        dplyr::select(-y.m)
+    }))%>%
+    dplyr::select(-t.H0.m,-t.H1.m)%>%
+    dplyr::rename(t.H0.m = t.H0.m1, t.H1.m = t.H1.m1)
+  
+  df2 <- df1%>%
+    dplyr::mutate(t.H0.CI = pmap(list(df=t.H0.m, M2 =  M2), Wald.CI),
+                  t.H1.CI = pmap(list(df=t.H1.m, M2 =  M2), Wald.CI),
+                  t.H0.bias = pmap(list(t.H0.m, M2 = M2), bias.fun))
+  
+  df2 <- df2%>%
+    mutate(type1 = map(t.H0.CI, reject.H0),
+           power = map(t.H1.CI, reject.H0))
+  
+  df3 <- df2%>%
+    select(scenario.id, p_T, M2, type1, power, t.H0.bias)%>%
+    mutate(type1 = map_dbl(type1, as.numeric),
+           power = map_dbl(power, as.numeric),
+           bias  = map_dbl(t.H0.bias, as.numeric))%>%
+    dplyr::select(-t.H0.bias)
+  
+  return(df3)
+  
+}
+
