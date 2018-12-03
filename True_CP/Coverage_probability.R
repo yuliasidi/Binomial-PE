@@ -78,3 +78,33 @@ bineval.cp%>%
   ggplot2::geom_hline(yintercept=0.95, colour="red")
 
 
+#fig#2 in Zhang et al 2010
+bineval <- data.frame(n1 = 100, n2 = 100, p1 = seq(0,1,0.01))%>%
+  mutate(p2 = 0.5)
+
+bineval.cp <- bind_cols(bineval,cp = pmap_dbl(bineval,cp_2prop.wilson, alpha=0.025))
+
+bineval.cp%>%
+  ggplot2::ggplot(aes(x = p1, y = cp)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point(size=0.1) +
+  ggplot2::geom_hline(yintercept=0.95, colour="red") +
+  ggplot2::scale_y_continuous(limits = c(0.85, 1)) +
+  ggplot2::scale_x_continuous(breaks = seq(0,1,0.2))
+
+#fig#2(lower) in Brown et al 2005
+bineval <- data.frame(n1 = 13, n2 = 10, p1 = seq(0,1,0.005))%>%
+  mutate(p2 = p1  )
+
+bineval.cp <- bind_cols(bineval,cp = pmap_dbl(bineval,cp_2prop.wilson, alpha=0.025))
+
+bineval.cp%>%
+  ggplot2::ggplot(aes(x = p1, y = cp)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point(size=0.1) +
+  ggplot2::geom_hline(yintercept=0.95, colour="red") +
+  ggplot2::scale_x_continuous(breaks = seq(0,1,0.2))
+
+
+
+

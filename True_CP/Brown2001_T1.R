@@ -49,3 +49,15 @@ f3%>%
   ggplot2::geom_point(size=0.1) +
   ggplot2::geom_hline(yintercept=0.95, colour="red")
   
+
+source("True_CP/CP_functions.R")
+
+#Figure 5 (Wilson) from the article
+f5.wilson <- data.frame(p = seq(0.01,0.99,0.001), n=50)
+f5.wilson.cp <- bind_cols(f5.wilson,cp = pmap_dbl(f5.wilson,cp_1prop.wilson, alpha=0.025))
+
+f5.wilson.cp%>%
+  ggplot2::ggplot(aes(x = p, y = cp)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point(size=0.1) +
+  ggplot2::geom_hline(yintercept=0.95, colour="red")
