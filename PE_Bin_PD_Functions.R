@@ -680,10 +680,12 @@ cca.wald.anal <- function(df){
   df1 <- df%>%
     dplyr::mutate(t.H0.m1 = map(t.H0.m, .f=function(df){
       df%>%
+        dplyr::select(-y)%>%
         dplyr::rename(y=y.m)
     }),
     t.H1.m1 = map(t.H1.m, .f=function(df){
       df%>%
+        dplyr::select(-y)%>%
         dplyr::rename(y=y.m)
     }))%>%
     dplyr::select(-t.H0.m,-t.H1.m)%>%
@@ -779,3 +781,137 @@ best.wald.anal <- function(df){
   
 }
 
+#Run CCA on different datasets with mar
+cca.mar.apply <- function(mar1, pm, cor){
+  dt.mar5   <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar5waldx%s%d_%d.rds' ,mar1,pm,cor,idx))
+  dt.mar10  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar10waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar15  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar15waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar20  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar20waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar25  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar25waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  
+  cca.X<- cca.wald.anal(dt.mar5)%>%
+    mutate(DO=0.05)%>%
+    rbind(cca.wald.anal(dt.mar10)%>%
+            mutate(DO=0.10),
+          cca.wald.anal(dt.mar15)%>%
+            mutate(DO=0.15),
+          cca.wald.anal(dt.mar20)%>%
+            mutate(DO=0.20),
+          cca.wald.anal(dt.mar25)%>%
+            mutate(DO=0.25))
+  return(cca.X)
+}
+
+#Run best case scenario imputation on different datasets with mar
+best.mar.apply <- function(mar1, pm, cor){
+  dt.mar5   <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar5waldx%s%d_%d.rds' ,mar1,pm,cor,idx))
+  dt.mar10  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar10waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar15  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar15waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar20  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar20waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar25  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar25waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  
+  best.X<- best.wald.anal(dt.mar5)%>%
+    mutate(DO=0.05)%>%
+    rbind(best.wald.anal(dt.mar10)%>%
+            mutate(DO=0.10),
+          best.wald.anal(dt.mar15)%>%
+            mutate(DO=0.15),
+          best.wald.anal(dt.mar20)%>%
+            mutate(DO=0.20),
+          best.wald.anal(dt.mar25)%>%
+            mutate(DO=0.25))
+  return(best.X)
+}
+
+#Run best case scenario imputation on different datasets with mar
+worst.mar.apply <- function(mar1, pm, cor){
+  dt.mar5   <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar5waldx%s%d_%d.rds' ,mar1,pm,cor,idx))
+  dt.mar10  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar10waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar15  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar15waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar20  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar20waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  dt.mar25  <- readRDS(file = sprintf('scenario23/dtMAR/dt%dmar25waldx%s%d_%d.rds',mar1,pm,cor,idx))
+  
+  worst.X<- worst.wald.anal(dt.mar5)%>%
+    mutate(DO=0.05)%>%
+    rbind(worst.wald.anal(dt.mar10)%>%
+            mutate(DO=0.10),
+          worst.wald.anal(dt.mar15)%>%
+            mutate(DO=0.15),
+          worst.wald.anal(dt.mar20)%>%
+            mutate(DO=0.20),
+          worst.wald.anal(dt.mar25)%>%
+            mutate(DO=0.25))
+  return(worst.X)
+}
+
+#Type-I error plot for different X/missingness
+plot.type1 <- function(df,title){
+  type1.g <- df%>%
+    tidyr::unnest(eval)%>%
+    dplyr::mutate(
+      cor=cor/100,
+      pm=factor(pm,labels=c('Negative','Positive')),
+      beta=sprintf('beta[T]=%s,beta[X]=%s',b.trt,b.X)
+    )%>%
+    ggplot(aes(x=DO,y=type1,colour=beta, shape=beta)) + 
+    geom_point() + 
+    geom_hline(yintercept=c(0.9,1.1)*alpha,
+               linetype=2) + 
+    facet_grid(pm~cor) +
+    theme(legend.position = 'bottom') +
+    labs(x='Dropout Rate',y='Type-I Error') +
+    ggtitle(sprintf('%s',title))
+  
+  return(type1.g)
+}
+
+#Power plot for different X/missingness
+plot.power <- function(df,title){
+  power.g <- df%>%
+    tidyr::unnest(eval)%>%
+    dplyr::mutate(
+      cor=cor/100,
+      pm=factor(pm,labels=c('Negative','Positive')),
+      beta=sprintf('beta[T]=%s,beta[X]=%s',b.trt,b.X)
+    )%>%
+    ggplot(aes(x=DO,y=power,colour=beta, shape=beta)) + 
+    geom_point() + 
+    facet_grid(pm~cor) +
+    theme(legend.position = 'bottom') +
+    labs(x='Dropout Rate',y='Power') +
+    ggtitle(sprintf('%s',title))
+  
+  return(power.g)
+}
+
+#Relative bias plot for different X/missingness
+plot.bias <- function(df,title){
+  bias.g <- df%>%
+    tidyr::unnest(eval)%>%
+    dplyr::mutate(
+      cor=cor/100,
+      pm=factor(pm,labels=c('Negative','Positive')),
+      beta=sprintf('beta[T]=%s,beta[X]=%s',b.trt,b.X)
+    )%>%
+    ggplot(aes(x=DO,y=bias,colour=beta, shape=beta)) + 
+    geom_point() + 
+    facet_grid(pm~cor) +
+    theme(legend.position = 'bottom') +
+    labs(x='Dropout Rate',y='Relative Bias') +
+    ggtitle(sprintf('%s',title))
+  
+  return(bias.g)
+}
+
+#saving plottly graphs
+gg2plotly <- function(gg,file){
+  
+  tf <- tempfile(fileext = '.html')
+  on.exit(unlink(tf),add = TRUE)
+  
+  gg%>%
+    plotly::ggplotly()%>%
+    htmlwidgets::saveWidget(file = tf,selfcontained = TRUE)
+  
+  invisible(file.copy(from = tf,to = file,overwrite = TRUE))
+}
