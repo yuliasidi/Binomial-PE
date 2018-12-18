@@ -1,0 +1,23 @@
+#!/home/statsadmin/R/bin/Rscript
+
+source('Step_0_init.R')
+
+args <- commandArgs()
+idx <- as.numeric(args[length(args)])
+.libPaths('ysidi/lib')
+
+
+dt.full.X <- readRDS(file = sprintf('dtfull{{TYPE}}_%d.rds',idx))
+
+set.seed(81762+idx+{{i}})
+
+#generate {{MISSING}} for 5-25% by 5% DO
+dt.{{MISSING}} <- miss.apply.do(dt.full.X, b.trt={{bTRT}}, b.y={{bY}}, b.X={{bX}}, do=0.{{PERCENT}})
+
+dt.{{MISSING}}.check <- dt.miss.check(dt.{{MISSING}} ,0.{{PERCENT}})
+
+
+saveRDS(dt.{{MISSING}}.check,file = sprintf('{{TYPE}}doch{{MISSING}}{{PERCENT}}_%d.rds',idx))
+
+saveRDS(dt.{{MISSING}},file = sprintf('dt{{TYPE}}{{MISSING}}{{PERCENT}}_%d.rds',idx))
+

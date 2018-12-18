@@ -1,0 +1,18 @@
+executable = step_3_1_type_wald_missing_mar_percent_25new.R
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/wald_mar_25new-$(Process).Rout
+error     = err/wald_mar_25new-$(Process).err
+log       = log/wald_mar_25new.log
+
+initialdir = jobs/run
+transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, ../savedata/dtfullwald_$(Process).rds
+# transfer_output_files = 
+
+Queue 30 
