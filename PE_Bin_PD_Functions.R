@@ -561,11 +561,12 @@ bias.fun <- function(df, M2, y){
 read_anal <- function(ANAL,TYPE, MISSING, PERCENT){
   purrr::map_df(
     list.files(path = "output/data", 
-               pattern = sprintf("%s%s%s%s", ANAL, MISSING, TYPE, PERCENT),  full.names = TRUE),
-    readRDS)%>%
-    dplyr::mutate(TYPE=sprintf('%s', TYPE), 
-                  MISSING = sprintf('%s', MISSING), 
-                  PERCENT = sprintf('%s', PERCENT))
+               pattern = sprintf("%s%s%s%s", ANAL, TYPE, MISSING, PERCENT),  full.names = TRUE),
+    readRDS)
+  #%>%
+  #  dplyr::mutate(TYPE=sprintf('%s', TYPE), 
+  #                MISSING = sprintf('%s', MISSING), 
+  #                PERCENT = sprintf('%s', PERCENT))
 } 
 
 read_analnew <- function(ANAL,TYPE, MISSING, PERCENT){
@@ -915,3 +916,87 @@ gg2plotly <- function(gg,file){
   
   invisible(file.copy(from = tf,to = file,overwrite = TRUE))
 }
+
+#MICE generate complete data
+mice.im.comp <- function(dt, n.mi=5){
+  dt.mice <- dt%>%
+    select(trtn,y.m,X)
+  
+  dt.mice.imp <- mice(dt.mice, m=n.mi, defaultMethod = "logreg")
+  
+  imp.n <- data.frame(i = seq(1,dt.mice.imp$m,1))
+  imp.n <- as.list(imp.n)
+  
+  dt.mice.comp <- purrr::pmap_dfr(imp.n, .f=function(i){
+    dt <- complete(dt.mice.imp,i)
+  }, .id = "i")
+  
+  return(dt.mice.comp)
+  
+}
+
+#Combine imputed datasets- Rubin's rules
+mi.res.sum <- function(df, M2){
+  df1 <- df%>%
+    group_by(sim.id,i,trtn)%>%
+    summarise(phat = mean(y.m), n = n())%>%
+    recast(sim.id + i ~ variable + trtn, measure.var = c("phat",'n'))%>%
+    mutate(phat.d = phat_0-phat_1,
+           var.d = phat_0*(1-phat_0)/(n_0) + phat_1*(1-phat_1)/(n_1))%>%
+    group_by(sim.id)%>%
+    summarise(qbar = mean(phat.d),
+              ubar = mean(var.d),
+              B = var(phat.d))%>%
+    mutate(T.var = ubar + (num.mi+1)/num.mi*B, 
+           v = floor((num.mi - 1)*(1 + 1/(num.mi+1)*ubar/B)^2),
+           
+           ci.l = qbar - qt(1-alpha, v)*sqrt(T.var),
+           ci.u = qbar + qt(1-alpha, v)*sqrt(T.var),
+           reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
+}
+
+#calculate bias after using MI
+bias.mi.fun <- function(df, M2){
+  df%>%
+    group_by(sim.id)%>%
+    mutate(bias = (qbar-M2)/M2)%>%
+    dplyr::select(sim.id, bias)%>%
+    dplyr::ungroup(sim.id)%>%
+    summarise(bias.m = mean(bias))
+}
+
+mice.apply <- function(df.orig){
+  df.orig%>%
+    mutate(t.H0 = map(t.H0.m, .f = function(df, n.mi=num.mi){
+      df1 <- df%>%
+        nest(-sim.id)
+      df2 <- df1%>%
+        mutate(out = purrr::map(data,mice.im.comp, n.mi=n.mi))
+      df3 <- df2%>%
+        select(sim.id, out)%>%
+        unnest()
+      return(df3)
+    }),
+    t.H1 = map(t.H1.m, .f = function(df, n.mi=num.mi){
+      df1 <- df%>%
+        nest(-sim.id)
+      df2 <- df1%>%
+        mutate(out = purrr::map(data,mice.im.comp, n.mi=n.mi))
+      df3 <- df2%>%
+        select(sim.id, out)%>%
+        unnest()
+      return(df3)
+    }))%>%
+    select(-t.H0.m, -t.H1.m)%>%
+    mutate(mice.H0 = map2(t.H0, M2, mi.res.sum),
+           mice.H1 = map2(t.H1, M2, mi.res.sum))%>%
+    select(-t.H0,-t.H1)%>%
+    mutate(type1 = map(mice.H0, reject.H0),
+           power = map(mice.H1, reject.H0),
+           type1 = map_dbl(type1, as.numeric),
+           power = map_dbl(power, as.numeric),
+           bias = map2(mice.H0, M2, bias.mi.fun),
+           bias = map_dbl(bias, as.numeric))
+  
+}
+
