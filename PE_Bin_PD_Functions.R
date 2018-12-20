@@ -1000,3 +1000,102 @@ mice.apply <- function(df.orig){
   
 }
 
+plot.type1.scenario <- function(df, ylim){
+  df%>%
+    dplyr::mutate(
+      beta=sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+      f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
+    )%>%
+    ggplot(aes(x=do,y=type1,colour=beta, shape=beta)) + 
+    geom_point() + 
+    geom_hline(yintercept=c(0.9,1.1)*alpha,
+               linetype=2) + 
+    facet_wrap(~f,labeller = label_parsed) +
+    theme(legend.position = 'bottom') +
+    labs(x='Dropout Rate',y='Type-I Error',colour=NULL,shape=NULL) +
+    scale_y_continuous(limits = ylim)
+}
+
+plot.power.scenario <- function(df, ylim){
+  df%>%
+    dplyr::mutate(
+      beta=sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+      f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
+    )%>%
+    ggplot(aes(x=do,y=power,colour=beta, shape=beta)) + 
+    geom_point() + 
+    facet_wrap(~f,labeller = label_parsed) +
+    theme(legend.position = 'bottom') +
+    labs(x='Dropout Rate',y='Power',colour=NULL,shape=NULL) +
+    scale_y_continuous(limits = ylim)
+  
+}
+
+plot.bias.scenario <- function(df, ylim){
+  df%>%
+    dplyr::mutate(
+    beta=sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+    f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
+  )%>%
+    ggplot(aes(x=do,y=bias,colour=beta, shape=beta)) + 
+    geom_point() + 
+    facet_wrap(~f,labeller = label_parsed) +
+    theme(legend.position = 'bottom') +
+    labs(x='Dropout Rate',y='Relative Bias') +
+    scale_y_continuous(limits = ylim)
+}
+
+miss.param.assign <- function(df){
+  # MCAR: .trt=0, b.y=0, b.X=0
+  b.trt0 <- 0
+  b.X0 <- 0
+  # MAR1: b.trt=0, b.y=0, b.X=2
+  b.trt1 <- 0
+  b.X1 <- 2
+  # MAR2: b.trt=2, b.y=log(1), b.X=2
+  b.trt2 <- 2
+  b.X2 <- 2
+  # MAR3: b.trt=0, b.y=0, b.X=-2
+  b.trt3 <- 0
+  b.X3 <- -2
+  # MAR4: b.trt=-2, b.y=0, b.X=-2
+  b.trt4 <- -2
+  b.X4 <- -2
+  # MAR5: b.trt=2, b.y=0, b.X=-2
+  b.trt5 <- 2
+  b.X5 <- -2
+  # MAR6: b.trt=-2, b.y=0, b.X=2
+  b.trt6 <- -2
+  b.X6 <- 2
+  # MNAR1: b.trt=-2, b.y=0, b.X=2
+  b.trt7 <- 0
+  b.X7 <- 2
+  b.Y7 <- 2
+  # MNAR2: b.trt=-2, b.y=0, b.X=2
+  b.trt8 <- 1
+  b.X8 <- -2
+  b.Y8 <- -2
+  
+  df%>%
+    mutate(b.trt = case_when(missing=='mcar'  ~ as.numeric(b.trt0),
+                             missing=='mar1'  ~ as.numeric(b.trt1),
+                             missing=='mar2'  ~ as.numeric(b.trt2),
+                             missing=='mar3'  ~ as.numeric(b.trt3),
+                             missing=='mar4'  ~ as.numeric(b.trt4),
+                             missing=='mar5'  ~ as.numeric(b.trt5),
+                             missing=='mar6'  ~ as.numeric(b.trt6),
+                             missing=='mnar1' ~ as.numeric(b.trt7),
+                             missing=='mnar2' ~ as.numeric(b.trt8)),
+           b.X = case_when(missing=='mcar'  ~ as.numeric(b.X0),
+                           missing=='mar1'  ~ as.numeric(b.X1),
+                           missing=='mar2'  ~ as.numeric(b.X2),
+                           missing=='mar3'  ~ as.numeric(b.X3),
+                           missing=='mar4'  ~ as.numeric(b.X4),
+                           missing=='mar5'  ~ as.numeric(b.X5),
+                           missing=='mar6'  ~ as.numeric(b.X6),
+                           missing=='mnar1' ~ as.numeric(b.X7),
+                           missing=='mnar2' ~ as.numeric(b.X8)),
+           b.Y = case_when(missing=='mnar1' ~ as.numeric(b.Y7),
+                           missing=='mnar2' ~ as.numeric(b.Y8),
+                           TRUE ~ as.numeric(0)))
+}
