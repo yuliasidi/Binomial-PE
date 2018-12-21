@@ -1000,10 +1000,11 @@ mice.apply <- function(df.orig){
   
 }
 
-plot.type1.scenario <- function(df, ylim){
+plot.type1.scenario <- function(df, ylim, miss.type='notmnar'){
   df%>%
     dplyr::mutate(
-      beta=sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+      beta=case_when(miss.type=='notmnar' ~ sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+                     TRUE ~ sprintf("beta[T]=%s, beta[X]=%s, beta[Y]=%s",b.trt,b.X, b.Y)),
       f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
     )%>%
     ggplot(aes(x=do,y=type1,colour=beta, shape=beta)) + 
@@ -1016,10 +1017,11 @@ plot.type1.scenario <- function(df, ylim){
     scale_y_continuous(limits = ylim)
 }
 
-plot.power.scenario <- function(df, ylim){
+plot.power.scenario <- function(df, ylim, miss.type='notmnar'){
   df%>%
     dplyr::mutate(
-      beta=sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+      beta=case_when(miss.type=='notmnar' ~ sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+                     TRUE ~ sprintf("beta[T]=%s, beta[X]=%s, beta[Y]=%s",b.trt,b.X, b.Y)),
       f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
     )%>%
     ggplot(aes(x=do,y=power,colour=beta, shape=beta)) + 
@@ -1031,17 +1033,18 @@ plot.power.scenario <- function(df, ylim){
   
 }
 
-plot.bias.scenario <- function(df, ylim){
+plot.bias.scenario <- function(df, ylim, miss.type='notmnar'){
   df%>%
     dplyr::mutate(
-    beta=sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
-    f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
-  )%>%
+      beta=case_when(miss.type=='notmnar' ~ sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
+                     TRUE ~ sprintf("beta[T]=%s, beta[X]=%s, beta[Y]=%s",b.trt,b.X, b.Y)),
+      f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
+    )%>%
     ggplot(aes(x=do,y=bias,colour=beta, shape=beta)) + 
     geom_point() + 
     facet_wrap(~f,labeller = label_parsed) +
     theme(legend.position = 'bottom') +
-    labs(x='Dropout Rate',y='Relative Bias') +
+    labs(x='Dropout Rate',y='Relative Bias',colour=NULL,shape=NULL) +
     scale_y_continuous(limits = ylim)
 }
 
