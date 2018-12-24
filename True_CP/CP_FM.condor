@@ -1,0 +1,18 @@
+executable = CP_FM.R
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/cp_fm-$(Process).Rout
+error     = err/cp_fm-$(Process).err
+log       = log/cp_fm.log
+
+initialdir = jobs/run
+transfer_input_files = ../myfiles/lib/, bineval.025.rds
+# transfer_output_files = 
+
+Queue 808 

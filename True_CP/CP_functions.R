@@ -57,9 +57,30 @@ cp_2prop.fm <- function(n1,p1,n2,p2,M2,alpha){
            b = -1*(2 + x/n1 + y/n2 + M2*3), 
            c = M2^2 + M2*(2*x/n1+2) + x/n1 + y/n2,
            d = -x/n1*M2*(1+M2))%>%
-    mutate(v = b^3/(27*a^3)-b*c/(6*a^2)+d/(2*a),
-           u = sign(v)*(b^2/(9*a^2)-c/(3*a))^0.5,
-           w = 1/3*(pi+acos(v/u^3)))%>%
+    mutate(
+      v = b^3/(27*a^3)-b*c/(6*a^2)+d/(2*a),
+      sv = sign(v),
+      #sv = ifelse(sv==0,1,sv),
+      u = sv*(b^2/(9*a^2)-c/(3*a))^0.5,
+      #u1 = ifelse(u==0,0.0001,u),
+      w_val = v/u^3
+    )%>%
+  mutate(w_val = case_when(w_val  >= 1 ~ as.numeric(1),
+                           w_val <= (-1) ~ as.numeric(-1),
+                           TRUE ~ as.numeric(w_val)))
+  
+  # if(any(is.na(dt.bin$w_flag)))
+  #   message(sprintf('rows are NA:\n%s',
+  #                   paste0(which(is.na(dt.bin$w_flag)),
+  #                          collapse = ', ')
+  #                   )
+  #   )
+
+  dt.bin <- dt.bin%>%
+    #dplyr::filter(is.na(w_flag)=="FALSE")%>%
+    mutate(
+      w = 1/3*(pi+acos(w_val))
+    )%>%
     mutate(p1.rmle = 2*u*cos(w)-b/(3*a),
            p2.rmle = p1.rmle-M2)%>%
     select(-a, -b, -c, -d, -v, -u, -w)%>%
