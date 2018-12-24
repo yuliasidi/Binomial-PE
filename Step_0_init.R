@@ -9,6 +9,7 @@ library(dplyr, warn.conflicts = F, quietly = T)
 library(ggplot2, warn.conflicts = F, quietly = T)
 library(purrr, warn.conflicts = F, quietly = T)
 library(reshape2, warn.conflicts = F, quietly = T)
+library(mice, warn.conflicts = F, quietly = T)
 
 source("PE_Bin_PD_Functions.R")
 
@@ -17,3 +18,7 @@ beta <- c(0.1)
 
 # # of simulated studies
 n.sim <- 10000
+
+# # of imputations for MI
+num.mi=5
+
