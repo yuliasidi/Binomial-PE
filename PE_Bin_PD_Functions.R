@@ -546,16 +546,16 @@ read_mech <- function(TYPE, MISSING, PERCENT){
 
 
 #Calculate relative bias and take a mean over the n simulations
-bias.fun <- function(df, M2, y){
-  df%>%
-    group_by(sim.id, trt)%>%
-    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
-    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
-    mutate(bias = (C_phat-T_phat-M2)/M2)%>%
-    dplyr::select(sim.id, bias)%>%
-    dplyr::ungroup(sim.id, trt)%>%
-    summarise(bias.m = mean(bias))
-}
+# bias.fun <- function(df, M2, y){
+#   df%>%
+#     group_by(sim.id, trt)%>%
+#     summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
+#     recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
+#     mutate(bias = (C_phat-T_phat-M2)/M2)%>%
+#     dplyr::select(sim.id, bias)%>%
+#     dplyr::ungroup(sim.id, trt)%>%
+#     summarise(bias.m = mean(bias))
+# }
 
 #read all the files that check do rates in the incomplete data
 read_anal <- function(ANAL,TYPE, MISSING, PERCENT){
@@ -1001,12 +1001,17 @@ mice.apply <- function(df.orig){
 }
 
 plot.type1.scenario <- function(df, ylim, miss.type='notmnar'){
-  df%>%
+  
+  plot_data <- df%>%
     dplyr::mutate(
-      beta=case_when(miss.type=='notmnar' ~ sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
-                     TRUE ~ sprintf("beta[T]=%s, beta[X]=%s, beta[Y]=%s",b.trt,b.X, b.Y)),
+      beta = case_when(
+        miss.type=='notmnar' ~ sprintf("beta[T]*'=%s, '*beta[X]*'=%s'",b.trt,b.X),
+        TRUE ~ sprintf("beta[T]*'=%s, '*beta[X]*'=%s, '*beta[Y]*'=%s'",b.trt,b.X, b.Y)
+      ),
       f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
-    )%>%
+    )
+  
+  plot_data %>%
     ggplot(aes(x=do,y=type1,colour=beta, shape=beta)) + 
     geom_point() + 
     geom_hline(yintercept=c(0.9,1.1)*alpha,
@@ -1014,39 +1019,70 @@ plot.type1.scenario <- function(df, ylim, miss.type='notmnar'){
     facet_wrap(~f,labeller = label_parsed) +
     theme(legend.position = 'bottom') +
     labs(x='Dropout Rate',y='Type-I Error',colour=NULL,shape=NULL) +
+    scale_color_discrete(
+      breaks = unique(plot_data$beta),
+      labels = scales::parse_format()(unique(plot_data$beta))
+    ) +
+    scale_shape_discrete(
+      breaks = unique(plot_data$beta),
+      labels = scales::parse_format()(unique(plot_data$beta))
+    ) +
     scale_y_continuous(limits = ylim)
 }
 
 plot.power.scenario <- function(df, ylim, miss.type='notmnar'){
-  df%>%
+  plot_data <- df%>%
     dplyr::mutate(
-      beta=case_when(miss.type=='notmnar' ~ sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
-                     TRUE ~ sprintf("beta[T]=%s, beta[X]=%s, beta[Y]=%s",b.trt,b.X, b.Y)),
+      beta = case_when(
+        miss.type=='notmnar' ~ sprintf("beta[T]*'=%s, '*beta[X]*'=%s'",b.trt,b.X),
+        TRUE ~ sprintf("beta[T]*'=%s, '*beta[X]*'=%s, '*beta[Y]*'=%s'",b.trt,b.X, b.Y)
+      ),
       f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
-    )%>%
+    )
+  
+  plot_data%>%
     ggplot(aes(x=do,y=power,colour=beta, shape=beta)) + 
     geom_point() + 
     facet_wrap(~f,labeller = label_parsed) +
     theme(legend.position = 'bottom') +
     labs(x='Dropout Rate',y='Power',colour=NULL,shape=NULL) +
+    scale_color_discrete(
+      breaks = unique(plot_data$beta),
+      labels = scales::parse_format()(unique(plot_data$beta))
+    ) +
+    scale_shape_discrete(
+      breaks = unique(plot_data$beta),
+      labels = scales::parse_format()(unique(plot_data$beta))
+    ) +
     scale_y_continuous(limits = ylim)
   
 }
 
 plot.bias.scenario <- function(df, ylim, miss.type='notmnar'){
-  df%>%
+  plot_data <- df%>%
     dplyr::mutate(
-      beta=case_when(miss.type=='notmnar' ~ sprintf("beta[T]=%s, beta[X]=%s",b.trt,b.X),
-                     TRUE ~ sprintf("beta[T]=%s, beta[X]=%s, beta[Y]=%s",b.trt,b.X, b.Y)),
+      beta = case_when(
+        miss.type=='notmnar' ~ sprintf("beta[T]*'=%s, '*beta[X]*'=%s'",b.trt,b.X),
+        TRUE ~ sprintf("beta[T]*'=%s, '*beta[X]*'=%s, '*beta[Y]*'=%s'",b.trt,b.X, b.Y)
+      ),
       f=sprintf("Delta*':%s'*', '*p[C]*': %s'",M2,p_T)
-    )%>%
+    )
+  
+  plot_data%>%
     ggplot(aes(x=do,y=bias,colour=beta, shape=beta)) + 
     geom_point() + 
     facet_wrap(~f,labeller = label_parsed) +
     theme(legend.position = 'bottom') +
     labs(x='Dropout Rate',y='Relative Bias',colour=NULL,shape=NULL) +
-    scale_y_continuous(limits = ylim)
-}
+    scale_color_discrete(
+      breaks = unique(plot_data$beta),
+      labels = scales::parse_format()(unique(plot_data$beta))
+    ) +
+    scale_shape_discrete(
+      breaks = unique(plot_data$beta),
+      labels = scales::parse_format()(unique(plot_data$beta))
+    ) +
+    scale_y_continuous(limits = ylim)}
 
 miss.param.assign <- function(df){
   # MCAR: .trt=0, b.y=0, b.X=0
