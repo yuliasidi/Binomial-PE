@@ -1,0 +1,19 @@
+#!/home/statsadmin/R/bin/Rscript
+
+source('Step_0_init.R')
+
+args <- commandArgs()
+idx <- as.numeric(args[length(args)])
+.libPaths('ysidi/lib')
+
+##################
+###   MICE    ####
+##################
+
+dt.miss <- readRDS(file = sprintf('dt{{TYPE}}{{MISSING}}{{PERCENT}}_%d.rds',idx))
+
+mice.anal <- mice.apply(dt.miss)%>%
+  mutate(type = '{{TYPE}}', missing = '{{MISSING}}', do = '{{PERCENT}}'  )
+
+saveRDS(mice.anal,file = sprintf('mice{{TYPE}}{{MISSING}}{{PERCENT}}_%d.rds',idx))
+

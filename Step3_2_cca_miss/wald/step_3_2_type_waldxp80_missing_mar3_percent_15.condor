@@ -1,0 +1,18 @@
+executable = step_3_2_type_waldxp80_missing_mar3_percent_15.R
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/waldxp80_mar3_15-$(Process).Rout
+error     = err/waldxp80_mar3_15-$(Process).err
+log       = log/waldxp80_mar3_15.log
+
+initialdir = jobs/run
+transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, ../savedata/dtwaldxp80mar315_$(Process).rds
+# transfer_output_files = 
+
+Queue 30 

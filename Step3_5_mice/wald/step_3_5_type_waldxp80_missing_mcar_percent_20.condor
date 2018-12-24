@@ -1,0 +1,18 @@
+executable = step_3_5_type_waldxp80_missing_mcar_percent_20.R
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/micewaldxp80_mcar_20-$(Process).Rout
+error     = err/micewaldxp80_mcar_20-$(Process).err
+log       = log/micewaldxp80_mcar_20.log
+
+initialdir = jobs/run
+transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, ../savedata/dtwaldxp80mcar20_$(Process).rds
+# transfer_output_files = 
+
+Queue 1 

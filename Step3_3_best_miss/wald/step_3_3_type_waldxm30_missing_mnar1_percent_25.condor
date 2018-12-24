@@ -1,0 +1,18 @@
+executable = step_3_3_type_waldxm30_missing_mnar1_percent_25.R
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/waldxm30_mnar1_25-$(Process).Rout
+error     = err/waldxm30_mnar1_25-$(Process).err
+log       = log/waldxm30_mnar1_25.log
+
+initialdir = jobs/run
+transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, ../savedata/dtwaldxm30mnar125_$(Process).rds
+# transfer_output_files = 
+
+Queue 30 
