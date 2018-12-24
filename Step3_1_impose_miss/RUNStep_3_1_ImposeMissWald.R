@@ -66,7 +66,10 @@ c.submit <- function(i){
 }
 
 #Run only wald rho=0.3
-purrr::walk(seq(1,45,1), c.submit)
+#purrr::walk(seq(1,45,1), c.submit)
+
+#Run only wald rho=-0.3
+purrr::walk(seq(46,90,1), c.submit)
 
 #purrr::walk(seq(51,100,1), c.submit)
 #purrr::walk(seq(101,150,1), c.submit)
@@ -84,12 +87,8 @@ condor::pull(session,
 condor::read_errs()
 
 condor::pull(session,
-             from = c('jobs/run/log',
-                      'jobs/run/out',
-                      'jobs/run/walddo*.rds'),
-             to = c('output',
-                    'output',
-                    'output/data'))
+             from = c('jobs/run/*doch*.rds'),
+             to = c('output/data'))
 
 # MOVE DATAFILES YOU WANT TO SAFE
 ssh::ssh_exec_wait(session, 'mv jobs/run/dt*.rds jobs/savedata')
