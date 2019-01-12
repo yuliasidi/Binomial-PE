@@ -546,16 +546,16 @@ read_mech <- function(TYPE, MISSING, PERCENT){
 
 
 #Calculate relative bias and take a mean over the n simulations
-# bias.fun <- function(df, M2, y){
-#   df%>%
-#     group_by(sim.id, trt)%>%
-#     summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
-#     recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
-#     mutate(bias = (C_phat-T_phat-M2)/M2)%>%
-#     dplyr::select(sim.id, bias)%>%
-#     dplyr::ungroup(sim.id, trt)%>%
-#     summarise(bias.m = mean(bias))
-# }
+bias.fun <- function(df, M2, y){
+  df%>%
+    group_by(sim.id, trt)%>%
+    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
+    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
+    mutate(bias = (C_phat-T_phat-M2)/M2)%>%
+    dplyr::select(sim.id, bias)%>%
+    dplyr::ungroup(sim.id, trt)%>%
+    summarise(bias.m = mean(bias))
+}
 
 #read all the files that check do rates in the incomplete data
 read_anal <- function(ANAL,TYPE, MISSING, PERCENT){
@@ -1017,7 +1017,9 @@ plot.type1.scenario <- function(df, ylim, miss.type='notmnar'){
     geom_hline(yintercept=c(0.9,1.1)*alpha,
                linetype=2) + 
     facet_wrap(~f,labeller = label_parsed) +
-    theme(legend.position = 'bottom') +
+    theme(legend.position = 'bottom',
+          text = element_text(size = 13),
+          strip.text = element_text(size = rel(0.7))) +
     labs(x='Dropout Rate',y='Type-I Error',colour=NULL,shape=NULL) +
     scale_color_discrete(
       breaks = unique(plot_data$beta),
@@ -1044,7 +1046,9 @@ plot.power.scenario <- function(df, ylim, miss.type='notmnar'){
     ggplot(aes(x=do,y=power,colour=beta, shape=beta)) + 
     geom_point() + 
     facet_wrap(~f,labeller = label_parsed) +
-    theme(legend.position = 'bottom') +
+    theme(legend.position = 'bottom',
+          text = element_text(size = 13),
+          strip.text = element_text(size = rel(0.7))) +
     labs(x='Dropout Rate',y='Power',colour=NULL,shape=NULL) +
     scale_color_discrete(
       breaks = unique(plot_data$beta),
@@ -1072,7 +1076,9 @@ plot.bias.scenario <- function(df, ylim, miss.type='notmnar'){
     ggplot(aes(x=do,y=bias,colour=beta, shape=beta)) + 
     geom_point() + 
     facet_wrap(~f,labeller = label_parsed) +
-    theme(legend.position = 'bottom') +
+    theme(legend.position = 'bottom',
+          text = element_text(size = 13),
+          strip.text = element_text(size = rel(0.7))) +
     labs(x='Dropout Rate',y='Relative Bias',colour=NULL,shape=NULL) +
     scale_color_discrete(
       breaks = unique(plot_data$beta),
