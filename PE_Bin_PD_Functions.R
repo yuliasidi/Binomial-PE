@@ -917,88 +917,6 @@ gg2plotly <- function(gg,file){
   invisible(file.copy(from = tf,to = file,overwrite = TRUE))
 }
 
-#MICE generate complete data
-mice.im.comp <- function(dt, n.mi=5){
-  dt.mice <- dt%>%
-    select(trtn,y.m,X)
-  
-  dt.mice.imp <- mice(dt.mice, m=n.mi, defaultMethod = "logreg")
-  
-  imp.n <- data.frame(i = seq(1,dt.mice.imp$m,1))
-  imp.n <- as.list(imp.n)
-  
-  dt.mice.comp <- purrr::pmap_dfr(imp.n, .f=function(i){
-    dt <- complete(dt.mice.imp,i)
-  }, .id = "i")
-  
-  return(dt.mice.comp)
-  
-}
-
-#Combine imputed datasets- Rubin's rules
-mi.res.sum <- function(df, M2){
-  df1 <- df%>%
-    group_by(sim.id,i,trtn)%>%
-    summarise(phat = mean(y.m), n = n())%>%
-    recast(sim.id + i ~ variable + trtn, measure.var = c("phat",'n'))%>%
-    mutate(phat.d = phat_0-phat_1,
-           var.d = phat_0*(1-phat_0)/(n_0) + phat_1*(1-phat_1)/(n_1))%>%
-    group_by(sim.id)%>%
-    summarise(qbar = mean(phat.d),
-              ubar = mean(var.d),
-              B = var(phat.d))%>%
-    mutate(T.var = ubar + (num.mi+1)/num.mi*B, 
-           v = floor((num.mi - 1)*(1 + 1/(num.mi+1)*ubar/B)^2),
-           
-           ci.l = qbar - qt(1-alpha, v)*sqrt(T.var),
-           ci.u = qbar + qt(1-alpha, v)*sqrt(T.var),
-           reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
-}
-
-#calculate bias after using MI
-bias.mi.fun <- function(df, M2){
-  df%>%
-    group_by(sim.id)%>%
-    mutate(bias = (qbar-M2)/M2)%>%
-    dplyr::select(sim.id, bias)%>%
-    dplyr::ungroup(sim.id)%>%
-    summarise(bias.m = mean(bias))
-}
-
-mice.apply <- function(df.orig){
-  df.orig%>%
-    mutate(t.H0 = map(t.H0.m, .f = function(df, n.mi=num.mi){
-      df1 <- df%>%
-        nest(-sim.id)
-      df2 <- df1%>%
-        mutate(out = purrr::map(data,mice.im.comp, n.mi=n.mi))
-      df3 <- df2%>%
-        select(sim.id, out)%>%
-        unnest()
-      return(df3)
-    }),
-    t.H1 = map(t.H1.m, .f = function(df, n.mi=num.mi){
-      df1 <- df%>%
-        nest(-sim.id)
-      df2 <- df1%>%
-        mutate(out = purrr::map(data,mice.im.comp, n.mi=n.mi))
-      df3 <- df2%>%
-        select(sim.id, out)%>%
-        unnest()
-      return(df3)
-    }))%>%
-    select(-t.H0.m, -t.H1.m)%>%
-    mutate(mice.H0 = map2(t.H0, M2, mi.res.sum),
-           mice.H1 = map2(t.H1, M2, mi.res.sum))%>%
-    select(-t.H0,-t.H1)%>%
-    mutate(type1 = map(mice.H0, reject.H0),
-           power = map(mice.H1, reject.H0),
-           type1 = map_dbl(type1, as.numeric),
-           power = map_dbl(power, as.numeric),
-           bias = map2(mice.H0, M2, bias.mi.fun),
-           bias = map_dbl(bias, as.numeric))
-  
-}
 
 plot.type1.scenario <- function(df, ylim, miss.type='notmnar'){
   
@@ -1144,3 +1062,140 @@ miss.param.assign <- function(df){
                            missing=='mnar2' ~ as.numeric(b.Y8),
                            TRUE ~ as.numeric(0)))
 }
+
+
+###################################
+####  MICE related funcitons  #####
+###################################
+
+#mice itself
+mice.im.comp <- function(dt, n.mi = 1, method = "logreg", seedaddimp = seedaddimp){
+
+  dt.mice <- dt%>%
+    dplyr::select(trtn,y.m,X)%>%
+    dplyr::mutate(y.m = as.factor(y.m),
+                  trtn = as.factor(trtn))
+
+  dt.mice.imp <- mice(
+    data = dt.mice,
+    m=n.mi,
+    method = method,
+    seed = seedaddimp,
+    maxit = 100,
+    printFlag = FALSE
+  )
+
+  imp.n <- data.frame(i = seq(1,dt.mice.imp$m,1))
+  imp.n <- as.list(imp.n)
+
+  dt.mice.comp <- purrr::pmap_dfr(imp.n, .f=function(i){
+    dt <- complete(dt.mice.imp,i)%>%
+      dplyr::mutate(y.m = as.numeric(y.m)-1)
+  }, .id = "i")
+
+  return(dt.mice.comp)
+
+}
+
+# apply mice on t.H0.m and t.H1.m
+mice.imp1 <- function(df.orig, n.mi=1, method = method, seedaddimp){
+  df.imp1 <- df.orig%>%
+    mutate(
+      t.H0.mice = map(t.H0.m, .f = ff, n.mi=n.mi, method = method, seedaddimp = seedaddimp),
+      t.H1.mice = map(t.H1.m, .f = ff, n.mi=n.mi, method = method, seedaddimp = seedaddimp)
+    )%>%
+    dplyr::select(-t.H0.m, -t.H1.m)
+  return(df.imp1)
+}
+
+# function used in the above mice.imp1
+ff <- function(df, n.mi=n.mi, method = method, seedaddimp = seedaddimp){
+  df1 <- df%>%
+    tidyr::nest(-sim.id)
+  df2 <- df1%>%
+    dplyr::mutate(out = purrr::map(data, mice.im.comp, n.mi=n.mi, method = method, seedaddimp = seedaddimp))
+  df3 <- df2%>%
+    dplyr::select(sim.id, out)%>%
+    tidyr::unnest()
+  df4 <- df3%>%
+    dplyr::group_by(sim.id, i, trtn)%>%
+    dplyr::summarise(phat = mean(y.m), n = n())%>%
+    reshape2::recast(sim.id + i~ variable + trtn, measure.var = c("phat",'n'))%>%
+    dplyr::mutate(phat.d = phat_0-phat_1,
+                  var.d = phat_0*(1-phat_0)/(n_0) + phat_1*(1-phat_1)/(n_1))%>%
+    dplyr::select(-i)
+  
+  return(df4)
+}
+
+#reruns mice n times
+rerun_mice <- function(n = 5, data , f , seed, method, n.mi) {
+  
+  tibble::tibble(
+    seed_i = seed + seq_len(n)
+  )%>%
+    dplyr::mutate(
+      ret = purrr::map(seed_i, f, df.orig = data, method = method, n.mi = n.mi)
+    )
+  
+}
+
+#Combine imputed datasets- Rubin's rules
+mi.res.sum <- function(df, M2){
+  df1 <- df%>%
+    group_by(sim.id)%>%
+    summarise(qbar = mean(phat.d),
+              ubar = mean(var.d),
+              B = var(phat.d))%>%
+    mutate(T.var = ubar + (num.mi+1)/num.mi*B, 
+           v = floor((num.mi - 1)*(1 + ubar/((1+1/num.mi)*B))^2),
+           
+           ci.l = qbar - qt(1-alpha, v)*sqrt(T.var),
+           ci.u = qbar + qt(1-alpha, v)*sqrt(T.var),
+           reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
+}
+
+#calculate bias after using MI
+bias.mi.fun <- function(df, M2){
+  df%>%
+    group_by(sim.id)%>%
+    mutate(bias = (qbar-M2)/M2)%>%
+    dplyr::select(sim.id, bias)%>%
+    dplyr::ungroup(sim.id)%>%
+    summarise(bias.m = mean(bias))
+}
+
+# final summary of mice results, including type1 error, power and bias
+mice_res <- function(df){
+  df%>%
+    tidyr::unnest()%>%
+    dplyr::select(-t.H1.mice)%>%
+    tidyr::unnest()%>%
+    tidyr::nest(-scenario.id, -M2, - p_T,.key = "t.H0")%>%
+    dplyr::bind_cols(mice_sim%>%
+                       tidyr::unnest()%>%
+                       dplyr::select(-t.H0.mice)%>%
+                       tidyr::unnest()%>%
+                       dplyr::select(-scenario.id, -M2, - p_T)%>%
+                       tidyr::nest(.key = "t.H1"))%>%
+    dplyr::mutate(mice.H0 = map2(t.H0, M2, mi.res.sum),
+                  mice.H1 = map2(t.H1, M2, mi.res.sum))%>%
+    dplyr::select(-t.H0,-t.H1)%>%
+    dplyr::mutate(type1 = map(mice.H0, reject.H0),
+                  power = map(mice.H1, reject.H0),
+                  type1 = map_dbl(type1, as.numeric),
+                  power = map_dbl(power, as.numeric),
+                  bias = map2(mice.H0, M2, bias.mi.fun),
+                  bias = map_dbl(bias, as.numeric))%>%
+    dplyr::select(-mice.H0, -mice.H1)%>%
+    dplyr::mutate(m = num.mi)
+} 
+
+
+
+
+
+
+
+
+
