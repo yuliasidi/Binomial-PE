@@ -40,7 +40,7 @@ cp.20 <- bind_rows(cp.20.wald%>%
 cp.all <- bind_rows(cp.025, cp.10, cp.20)%>%
   filter(n1<=2100)%>%
   mutate(Delta = sprintf("Delta ~ %g",Delta),
-         p1 = sprintf("p_C ~ %g",p1))
+         p1 = sprintf("p[C] ~ %g",p1))
 
 cp.all.plot <- cp.all%>%
   ggplot2::ggplot(aes(x = n1, y = cp, group=Method)) +
@@ -49,7 +49,9 @@ cp.all.plot <- cp.all%>%
   ggplot2::geom_hline(yintercept=0.95, colour="red") +
   ggplot2::geom_vline(xintercept=90, colour="grey") +
   ggplot2::scale_y_continuous(limits = c(0.94, 0.97)) +
-  theme(legend.position = "bottom")+
+  theme(legend.position = "bottom",
+        text = element_text(size = 13),
+        strip.text = element_text(size = rel(0.7)))+
   xlab("N per treatment group") +
   ylab("True coverage probability") +
   scale_x_continuous(limits = c(90,2100), breaks = c(90,seq(500,1500,500),2100)) +
@@ -112,7 +114,9 @@ cp.all.plot.small <- cp.all.small%>%
   ggplot2::geom_point(size=0.1, aes(color=Method)) +
   ggplot2::geom_hline(yintercept=0.95, colour="red") +
   #ggplot2::scale_y_continuous(limits = seq(0.9,1,0.1)) +
-  theme(legend.position = "bottom")+
+  theme(legend.position = "bottom",
+        text = element_text(size = 13),
+        strip.text = element_text(size = rel(0.7)))+
   xlab("N per treatment group") +
   ylab("True coverage probability") +
   scale_x_continuous(breaks = seq(20,90,10)) +
