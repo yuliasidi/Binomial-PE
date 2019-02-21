@@ -6,7 +6,7 @@ source('Step_0_init.R')
 scenarios <- expand.grid(
   MISSING=c('mcar','mar1','mar2','mar3','mar4','mar5','mar6','mnar1','mnar2'),
   PERCENT=sprintf('%02d',seq(5,25,5)),
-  TYPE=c('waldxm30')
+  TYPE=c('waldxp80')
   #TYPE=c('wald','waldxm30','waldxmm','waldxp80')
   ,stringsAsFactors = FALSE)
  
@@ -18,12 +18,12 @@ app_temp <- function(TYPE,MISSING,PERCENT){
     file = sprintf('step_3_2_type_%s_missing_%s_percent_%s.R',TYPE,MISSING,PERCENT),
     args = c('$(Process)'),
     tag = sprintf('%s_%s_%s',TYPE,MISSING,PERCENT),
-    jobs = 1,
+    jobs = 30,
     init_dir = 'jobs/run',
     template_file = sprintf('Step3_2_cca_miss/wald/step_3_2_type_%s_missing_%s_percent_%s.condor',TYPE,MISSING,PERCENT),
     input_files = c('../myfiles/lib/','Step_0_init.R', 'PE_Bin_PD_Functions.R',
                     sprintf('../savedata/dt%s%s%s_$(Process).rds',TYPE, MISSING, PERCENT)),
-    job_type = 'test')
+    job_type = 'short')
 }
 
 
@@ -56,7 +56,7 @@ ssh::scp_upload(session,
                 to = '~')
 
 
-condor::create_dirs(session, file = 'Step3_2_cca_miss/wald/step_3_2_type_waldxm30_missing_mnar1_percent_25.condor')
+condor::create_dirs(session, file = 'Step3_2_cca_miss/wald/step_3_2_type_waldxp80_missing_mnar1_percent_25.condor')
 
 ssh::scp_upload(session,
                 files = c('Step_0_init.R','PE_Bin_PD_Functions.R'),
@@ -68,16 +68,15 @@ c.submit <- function(i){
 }
 
 #Run only wald rho=0.3
-purrr::walk(seq(1,45,1), c.submit)
+#purrr::walk(seq(1,45,1), c.submit)
 
 #Run only wald rho=-0.3
-purrr::walk(seq(1,1,1), c.submit)
+#purrr::walk(seq(1,45,1), c.submit)
 
-purrr::walk(seq(46,90,1), c.submit)
+#Run only wald rho=max
+purrr::walk(seq(1,45,1), c.submit)
 
-#purrr::walk(seq(51,100,1), c.submit)
-#purrr::walk(seq(101,150,1), c.submit)
-#purrr::walk(seq(151,180,1), c.submit)
+
 
 condor::condor_q(session)
 
@@ -91,29 +90,30 @@ condor::pull(session,
 condor::read_errs()
 
 condor::pull(session,
-             from = c('jobs/run/log',
-                      'jobs/run/out',
-                      'jobs/run/*.rds'),
-             to = c('output',
-                    'output',
-                    'output/data'))
+             from = c('jobs/run/cca*'),
+             to = c('output/data'))
 
 # MOVE DATAFILES YOU WANT TO SAFE
 #ssh::ssh_exec_wait(session, 'mv jobs/run/dt*.rds jobs/savedata')
 
-condor::cleanup_remote(session)
-
-ssh::ssh_disconnect(session)
 
 scenarios.cca <- scenarios%>%
   mutate(ANAL = 'cca')
 
-scenarios.cca_waldp30 <- as.list(scenarios.cca%>%slice(1:45))
-cca_waldp30 <- purrr::pmap_df(scenarios.cca_waldp30, read_anal)
+scenarios.cca_wald <- as.list(scenarios.cca)
+#cca_waldp30 <- purrr::pmap_df(scenarios.cca_waldp30, read_anal)
+#cca_waldm30 <- purrr::pmap_df(scenarios.cca_wald, read_anal)
+cca_waldpp <- purrr::pmap_df(scenarios.cca_wald, read_anal)
 
-saveRDS(cca_waldp30,"DataSummaries/cca_waldp30.rds")
+#saveRDS(cca_waldp30,"DataSummaries/cca_waldp30.rds")
+#saveRDS(cca_waldm30,"DataSummaries/cca_waldm30.rds")
+saveRDS(cca_waldpp,"DataSummaries/cca_waldpp.rds")
 
 #condor::cleanup_local(dir = 'output',tag = 'fm')
 #condor::cleanup_local(dir = 'output',tag = 'wn')
 condor::cleanup_local(dir = 'output',tag = 'cca')
+
+condor::cleanup_remote(session)
+
+ssh::ssh_disconnect(session)
 

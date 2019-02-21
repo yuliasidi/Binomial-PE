@@ -104,45 +104,44 @@ dev.off()
 #####################
 ####  BEST-MAR   ####
 #####################
-#CONTINUE HERE!!!
-best_waldp30.mar <-miss.param.assign(best_waldp30)%>%
+best_waldm30.mar <-miss.param.assign(best_waldm30)%>%
   filter(grepl('mar',missing))
 
-type1.best_waldp30.mar <- plot.type1.scenario(best_waldp30.mar, c(0, 1))
-power.best_waldp30.mar <- plot.power.scenario(best_waldp30.mar, c(0, 1))
-bias.best_waldp30.mar  <- plot.bias.scenario(best_waldp30.mar, c(-3, 2.5))
+type1.best_waldm30.mar <- plot.type1.scenario(best_waldm30.mar, c(0, 1))
+power.best_waldm30.mar <- plot.power.scenario(best_waldm30.mar, c(0, 1))
+bias.best_waldm30.mar  <- plot.bias.scenario(best_waldm30.mar, c(-2.7, 2.2))
 
 
-pdf("final_outputs/WaldP30/type1_best_waldp30_mar.pdf")
-type1.best_waldp30.mar
+pdf("final_outputs/WaldM30/type1_best_waldm30_mar.pdf")
+type1.best_waldm30.mar
 dev.off()
 
-pdf("final_outputs/WaldP30/power_best_waldp30_mar.pdf")
-power.best_waldp30.mar
+pdf("final_outputs/WaldM30/power_best_waldm30_mar.pdf")
+power.best_waldm30.mar
 dev.off()
 
-pdf("final_outputs/WaldP30/bias_best_waldp30_mar.pdf")
-bias.best_waldp30.mar
+pdf("final_outputs/WaldM30/bias_best_waldm30_mar.pdf")
+bias.best_waldm30.mar
 dev.off()
 
 #####################
 ####  BEST-MNAR   ####
 #####################
 
-best_waldp30.mnar <-miss.param.assign(best_waldp30)%>%
+best_waldm30.mnar <-miss.param.assign(best_waldm30)%>%
   filter(grepl('mnar',missing))
 
-type1.best_waldp30.mnar <- plot.type1.scenario(best_waldp30.mnar, c(0.02, 1), miss.type = 'mnar')
-power.best_waldp30.mnar <- plot.power.scenario(best_waldp30.mnar, c(0.89, 1), miss.type = 'mnar')
-bias.best_waldp30.mnar  <- plot.bias.scenario(best_waldp30.mnar, c(-1.7, 0), miss.type = 'mnar')
+type1.best_waldm30.mnar <- plot.type1.scenario(best_waldm30.mnar, c(0.02, 1), miss.type = 'mnar')
+power.best_waldm30.mnar <- plot.power.scenario(best_waldm30.mnar, c(0.89, 1), miss.type = 'mnar')
+bias.best_waldm30.mnar  <- plot.bias.scenario(best_waldm30.mnar, c(-1.7, 0), miss.type = 'mnar')
 
 
-pdf("final_outputs/WaldP30/type1_best_waldp30_mnar.pdf")
-type1.best_waldp30.mnar
+pdf("final_outputs/WaldM30/type1_best_waldm30_mnar.pdf")
+type1.best_waldm30.mnar
 dev.off()
 
-pdf("final_outputs/WaldP30/power_best_waldp30_mnar.pdf")
-power.best_waldp30.mnar
+pdf("final_outputs/WaldM30/power_best_waldm30_mnar.pdf")
+power.best_waldm30.mnar
 dev.off()
 
 pdf("final_outputs/WaldP30/bias_best_waldp30_mnar.pdf")

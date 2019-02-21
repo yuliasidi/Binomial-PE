@@ -95,16 +95,7 @@ condor::cleanup_remote(session)
 
 ssh::ssh_disconnect(session)
 
-#check that the desired do level was achieved:
-doch <- purrr::pmap_df(scenarios_list, read_doch)
 
-doch.sum <-
-  doch%>%
-  group_by(TYPE,MISSING,PERCENT)%>%
-  summarise(n=n())
-
-
-saveRDS(doch,"simchecks/docheckwaldp30.rds")
 
 #condor::cleanup_local(dir = 'output',tag = 'fm')
 #condor::cleanup_local(dir = 'output',tag = 'wn')

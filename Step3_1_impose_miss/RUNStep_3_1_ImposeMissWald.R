@@ -6,7 +6,8 @@ source('Step_0_init.R')
 scenarios <- expand.grid(
   MISSING=c('mcar','mar1','mar2','mar3','mar4','mar5','mar6','mnar1','mnar2'),
   PERCENT=sprintf('%02d',seq(5,25,5)),
-  TYPE=c('wald','waldxm30','waldxmm','waldxp80')
+  TYPE=c('waldxp80')
+  #TYPE=c('wald','waldxm30','waldxmm','waldxp80')
   ,stringsAsFactors = FALSE)
  
 scenarios_list <- as.list(scenarios)
@@ -54,7 +55,7 @@ ssh::scp_upload(session,
                 to = '~')
 
 
-condor::create_dirs(session, file = 'Step3_1_impose_miss/wald/step_3_1_type_wald_missing_mnar1_percent_25.condor')
+condor::create_dirs(session, file = 'Step3_1_impose_miss/wald/step_3_1_type_waldxp80_missing_mnar1_percent_25.condor')
 
 ssh::scp_upload(session,
                 files = c('Step_0_init.R','PE_Bin_PD_Functions.R'),
@@ -69,11 +70,11 @@ c.submit <- function(i){
 #purrr::walk(seq(1,45,1), c.submit)
 
 #Run only wald rho=-0.3
-purrr::walk(seq(46,90,1), c.submit)
+#purrr::walk(seq(46,90,1), c.submit)
 
-#purrr::walk(seq(51,100,1), c.submit)
-#purrr::walk(seq(101,150,1), c.submit)
-#purrr::walk(seq(151,180,1), c.submit)
+#Run only wald rho=max
+purrr::walk(seq(1,45,1), c.submit)
+
 
 condor::condor_q(session)
 
@@ -106,7 +107,7 @@ doch.sum <-
   summarise(n=n())
 
 
-saveRDS(doch,"simchecks/docheckwaldp30.rds")
+saveRDS(doch,"simchecks/docheckwaldpp.rds")
 
 #condor::cleanup_local(dir = 'output',tag = 'fm')
 #condor::cleanup_local(dir = 'output',tag = 'wn')

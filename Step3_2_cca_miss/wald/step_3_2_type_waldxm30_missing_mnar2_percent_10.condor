@@ -1,7 +1,7 @@
 executable = step_3_2_type_waldxm30_missing_mnar2_percent_10.R
 universe = vanilla
 Requirements = ParallelSchedulingGroup == "stats group"
-+AccountingGroup = "group_statistics_testjob.yuliasidi"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
 
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT
@@ -15,4 +15,4 @@ initialdir = jobs/run
 transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, ../savedata/dtwaldxm30mnar210_$(Process).rds
 # transfer_output_files = 
 
-Queue 1 
+Queue 30 

@@ -110,7 +110,7 @@ best_waldp30.mar <-miss.param.assign(best_waldp30)%>%
 
 type1.best_waldp30.mar <- plot.type1.scenario(best_waldp30.mar, c(0, 1))
 power.best_waldp30.mar <- plot.power.scenario(best_waldp30.mar, c(0, 1))
-bias.best_waldp30.mar  <- plot.bias.scenario(best_waldp30.mar, c(-3, 2.5))
+bias.best_waldp30.mar  <- plot.bias.scenario(best_waldp30.mar, c(-2.7, 2.2))
 
 
 pdf("final_outputs/WaldP30/type1_best_waldp30_mar.pdf")

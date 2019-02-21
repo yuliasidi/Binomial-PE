@@ -6,7 +6,8 @@ source('Step_0_init.R')
 scenarios <- expand.grid(
   MISSING=c('mcar','mar1','mar2','mar3','mar4','mar5','mar6','mnar1','mnar2'),
   PERCENT=sprintf('%02d',seq(5,25,5)),
-  TYPE=c('wald','waldxm30','waldxmm','waldxp80')
+  TYPE=c('waldxp80')
+  #TYPE=c('wald','waldxm30','waldxmm','waldxp80')
   ,stringsAsFactors = FALSE)
  
 scenarios_list <- as.list(scenarios)
@@ -55,7 +56,9 @@ ssh::scp_upload(session,
                 to = '~')
 
 
-condor::create_dirs(session, file = 'Step3_3_best_miss/wald/step_3_3_type_wald_missing_mnar1_percent_25.condor')
+#condor::create_dirs(session, file = 'Step3_3_best_miss/wald/step_3_3_type_wald_missing_mnar1_percent_25.condor')
+#condor::create_dirs(session, file = 'Step3_3_best_miss/wald/step_3_3_type_waldxm30_missing_mnar1_percent_25.condor')
+condor::create_dirs(session, file = 'Step3_3_best_miss/wald/step_3_3_type_waldxp80_missing_mnar1_percent_25.condor')
 
 ssh::scp_upload(session,
                 files = c('Step_0_init.R','PE_Bin_PD_Functions.R'),
@@ -67,6 +70,12 @@ c.submit <- function(i){
 }
 
 #Run only wald rho=0.3
+#purrr::walk(seq(1,45,1), c.submit)
+
+#Run only wald rho=-0.3
+#purrr::walk(seq(1,45,1), c.submit)
+
+#Run only wald rho=max
 purrr::walk(seq(1,45,1), c.submit)
 
 #purrr::walk(seq(51,100,1), c.submit)
@@ -85,12 +94,8 @@ condor::pull(session,
 condor::read_errs()
 
 condor::pull(session,
-             from = c('jobs/run/log',
-                      'jobs/run/out',
-                      'jobs/run/*.rds'),
-             to = c('output',
-                    'output',
-                    'output/data'))
+             from = c('jobs/run/*.rds'),
+             to = c('output/data'))
 
 # MOVE DATAFILES YOU WANT TO SAFE
 #ssh::ssh_exec_wait(session, 'mv jobs/run/dt*.rds jobs/savedata')
@@ -102,12 +107,16 @@ ssh::ssh_disconnect(session)
 scenarios.best <- scenarios%>%
   mutate(ANAL = 'best')
 
-scenarios.best_waldp30 <- as.list(scenarios.best%>%slice(1:45))
-best_waldp30 <- purrr::pmap_df(scenarios.best_waldp30, read_anal)
+scenarios.best_wald <- as.list(scenarios.best)
+#best_waldp30 <- purrr::pmap_df(scenarios.best_waldp30, read_anal)
+#best_waldm30 <- purrr::pmap_df(scenarios.best_wald, read_anal)
+best_waldpp <- purrr::pmap_df(scenarios.best_wald, read_anal)
 
-saveRDS(best_waldp30,"DataSummaries/best_waldp30.rds")
+#saveRDS(best_waldp30,"DataSummaries/best_waldp30.rds")
+#saveRDS(best_waldm30,"DataSummaries/best_waldm30.rds")
+saveRDS(best_waldpp,"DataSummaries/best_waldpp.rds")
 
 #condor::cleanup_local(dir = 'output',tag = 'fm')
 #condor::cleanup_local(dir = 'output',tag = 'wn')
-condor::cleanup_local(dir = 'output',tag = 'best')
+condor::cleanup_local(dir = 'output',tag = 'wald')
 

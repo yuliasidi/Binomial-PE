@@ -301,7 +301,9 @@ ss.full.plot.res.diff <- ggplot(data = ss.full.plot.diff, aes(x=p_C, y=ss, fill=
   #scale_y_continuous(limits = c(0,0.05))+
   xlab("Proportion of events in active treatment")+
   ylab("Sample size differences")+
-  theme(legend.position = "bottom")+
+  theme(legend.position = "bottom",
+        text = element_text(size = 13),
+        strip.text = element_text(size = rel(0.7)))+
   ggtitle("Samaple size differences per scenario")+
   facet_wrap(~M2)
 
@@ -309,9 +311,9 @@ pdf("ss_perscenario_diff.pdf")
 ss.full.plot.res.diff
 dev.off()
 
-###################################
+#################################
 ### Type-I Error - Wald 20000 ###
-##################################
+#################################
 
 dt.full.sum <- readRDS('dtfullsum_wald20000.rds')
 
