@@ -6,14 +6,25 @@ args <- commandArgs()
 idx <- as.numeric(args[length(args)])
 .libPaths('ysidi/lib')
 
-##################
+#################
 ###   MICE    ####
-##################
+#################
 
-dt.miss <- readRDS(file = sprintf('dtwaldmar305_%d.rds',idx))
+f.nm <- sprintf('dtwaldmar305_%d.rds',idx)
 
-mice.anal <- mice.apply(dt.miss)%>%
-  mutate(type = 'wald', missing = 'mar3', do = '05'  )
+dt.miss <- readRDS(file = f.nm)
+df_names <- readRDS(file = "df_names.rds")
 
-saveRDS(mice.anal,file = sprintf('micewaldmar305_%d.rds',idx))
+df_names <- readRDS(file = "df_names.rds")
 
+
+seedadd <- df_names$seedadd[df_names$dtname==f.nm]
+
+mice_sim <- rerun_mice(n = num.mi,
+data = dt.miss,
+f = mice.imp1,
+seed = seedadd,
+method = "logreg",
+n.mi = 1)
+
+saveRDS(mice_sim,file = sprintf('micewaldmar305_%d.rds',idx))

@@ -5,6 +5,7 @@ source('Step_0_init.R')
 # generate condor files for all the scenarios
 scenarios <- expand.grid(
   TYPE=c('wald'),
+  REPN=seq(1,100,1),
   #TYPE=c('wald','waldxm30','waldxmm','waldxp80'),
   MISSING=c('mcar','mar1','mar2','mar3','mar4','mar5','mar6','mnar1','mnar2'),
   PERCENT=sprintf('%02d',seq(5,25,5))
@@ -13,16 +14,16 @@ scenarios <- expand.grid(
  
 scenarios_list <- as.list(scenarios)
 
-app_temp <- function(TYPE,MISSING,PERCENT){
+app_temp <- function(TYPE,MISSING,PERCENT,REPN){
   
   build_template(
-    file = sprintf('step_3_5_type_%s_missing_%s_percent_%s.R',TYPE,MISSING,PERCENT),
+    file = sprintf('step_3_5_type_%s_missing_%s_percent_%s_%d.R',TYPE,MISSING,PERCENT,REPN),
     args = c('$(Process)'),
-    tag = sprintf('mice%s_%s_%s',TYPE,MISSING,PERCENT),
-    jobs = 1,
+    tag = sprintf('mice%s_%s_%s_%d',TYPE,MISSING,PERCENT,REPN),
+    jobs = 30,
     mem = 10,
     init_dir = 'jobs/run',
-    template_file = sprintf('Step3_5_mice/wald/step_3_5_type_%s_missing_%s_percent_%s.condor',TYPE,MISSING,PERCENT),
+    template_file = sprintf('Step3_5_mice/wald/step_3_5_type_%s_missing_%s_percent_%s_%d.condor',TYPE,MISSING,PERCENT,REPN),
     input_files = c('../myfiles/lib/','Step_0_init.R', 'PE_Bin_PD_Functions.R', 'df_names.rds',
                     sprintf('../savedata/dt%s%s%s_$(Process).rds',TYPE, MISSING, PERCENT)),
     job_type = "short")
@@ -39,11 +40,11 @@ session <- ssh_connect(Sys.getenv('UCONN_USER'))
 
 scenarios1 <- scenarios%>%
   dplyr::mutate(fnameR = 
-                  sprintf('Step3_5_mice/wald/step_3_5_type_%s_missing_%s_percent_%s.R',TYPE,MISSING,PERCENT),
+                  sprintf('Step3_5_mice/wald/step_3_5_type_%s_missing_%s_percent_%s_%d.R',TYPE,MISSING,PERCENT,REPN),
                 fnameC = 
-                  sprintf('Step3_5_mice/wald/step_3_5_type_%s_missing_%s_percent_%s.condor',TYPE,MISSING,PERCENT),
+                  sprintf('Step3_5_mice/wald/step_3_5_type_%s_missing_%s_percent_%s_%d.condor',TYPE,MISSING,PERCENT,REPN),
                 fnameC.submit = 
-                  sprintf('step_3_5_type_%s_missing_%s_percent_%s.condor',TYPE,MISSING,PERCENT))
+                  sprintf('step_3_5_type_%s_missing_%s_percent_%s_%d.condor',TYPE,MISSING,PERCENT, REPN))
 
 fname.listR <- as.vector(scenarios1$fnameR)
 fname.listC <- as.vector(scenarios1$fnameC)
@@ -70,7 +71,7 @@ c.submit <- function(i){
 }
 
 #Run only wald rho=max
-purrr::walk(seq(37,37,1), c.submit)
+purrr::walk(seq(901,950,1), c.submit)
 
 
 condor::condor_q(session)

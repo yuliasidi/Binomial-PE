@@ -10,9 +10,10 @@ arguments = $(Process)
 output    = out/micewald_mar6_10-$(Process).Rout
 error     = err/micewald_mar6_10-$(Process).err
 log       = log/micewald_mar6_10.log
+request_memory = 10 GB
 
 initialdir = jobs/run
-transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, ../savedata/dtwaldmar610_$(Process).rds
+transfer_input_files = ../myfiles/lib/, Step_0_init.R, PE_Bin_PD_Functions.R, df_names.rds, ../savedata/dtwaldmar610_$(Process).rds
 # transfer_output_files = 
 
 Queue 1 
