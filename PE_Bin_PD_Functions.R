@@ -1141,12 +1141,13 @@ rerun_mice <- function(n = 5, data , f , seed, method, n.mi) {
 }
 
 #Combine imputed datasets- Rubin's rules
-mi.res.sum <- function(df, M2){
+mi.res.sum <- function(df){
   df1 <- df%>%
-    group_by(sim.id)%>%
+    group_by(scenario.id, sim.id)%>%
     summarise(qbar = mean(phat.d),
               ubar = mean(var.d),
-              B = var(phat.d))%>%
+              B = var(phat.d),
+              M2 = mean(M2))%>%
     mutate(T.var = ubar + (num.mi+1)/num.mi*B, 
            v = floor((num.mi - 1)*(1 + ubar/((1+1/num.mi)*B))^2),
            
@@ -1158,10 +1159,10 @@ mi.res.sum <- function(df, M2){
 #calculate bias after using MI
 bias.mi.fun <- function(df, M2){
   df%>%
-    group_by(sim.id)%>%
+    group_by(scenario.id, sim.id)%>%
     mutate(bias = (qbar-M2)/M2)%>%
-    dplyr::select(sim.id, bias)%>%
-    dplyr::ungroup(sim.id)%>%
+    dplyr::select(scenario.id, sim.id, bias)%>%
+    dplyr::group_by(scenario.id)%>%
     summarise(bias.m = mean(bias))
 }
 
