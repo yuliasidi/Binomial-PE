@@ -1,0 +1,18 @@
+executable = test.R
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_testjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/fm-$(Process).Rout
+error     = err/fm-$(Process).err
+log       = log/fm.log
+
+initialdir = jobs/run
+transfer_input_files = lib
+# transfer_output_files = 
+
+Queue 1

@@ -6,12 +6,11 @@
 
 library(tidyr, warn.conflicts = F, quietly = T)
 library(dplyr, warn.conflicts = F, quietly = T)
-library(ggplot2, warn.conflicts = F, quietly = T)
 library(purrr, warn.conflicts = F, quietly = T)
 library(reshape2, warn.conflicts = F, quietly = T)
 library(mice, warn.conflicts = F, quietly = T)
 
-source("PE_Bin_PD_Functions.R")
+#source("PE_Bin_PD_Functions.R")
 
 alpha <- c(0.025)
 beta <- c(0.1)
@@ -20,5 +19,5 @@ beta <- c(0.1)
 n.sim <- 10000
 
 # # of imputations for MI
-num.mi=5
+num.mi=10
 

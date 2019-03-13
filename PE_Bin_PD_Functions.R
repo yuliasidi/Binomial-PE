@@ -45,19 +45,26 @@ Wald.CI <- function(df, M2, y){
 }
 
 # Produces point estimate and FM CI for difference in proportions & test H
-FM.CI <- function(df, M2, y){
-  df%>%
-    group_by(sim.id, trt)%>%
-    summarise(phat = mean(y, na.rm = T), n = sum(!is.na(y)))%>%
-    recast(sim.id ~ trt + variable, measure.var = c("phat",'n'))%>%
+FM.CI <- function(df,y){
+
+  df1 <- df%>%
+    group_by(missing, trt)%>%
+    dplyr::summarise(phat = mean(!!rlang::sym(y), na.rm = T), n = sum(!is.na(!!rlang::sym(y))))%>%
+    recast(missing ~ trt + variable, measure.var = c("phat",'n'))%>%
     rename(p_T = T_phat, p_C = C_phat)%>%
-    p.rmle.fm(M2 = M2)%>%
+    p.rmle.fm(M2 = df$M2[1])%>%
     mutate(phat.d = p_C-p_T, 
            ci.l = phat.d - qnorm(1-alpha)*sqrt(p_C.rmle*(1-p_C.rmle)/C_n+
                                                  p_T.rmle*(1-p_T.rmle)/T_n),
            ci.u = phat.d + qnorm(1-alpha)*sqrt(p_C.rmle*(1-p_C.rmle)/C_n+
                                                  p_T.rmle*(1-p_T.rmle)/T_n),
-           reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
+           reject.h0 = case_when(ci.u < df$M2[1] ~ 1, TRUE ~ 0))
+  
+  df2 <- df1%>%
+    dplyr::mutate(type = df$type[1])
+  
+  return(df2)
+ 
 }
 
 # Summarizes number of rejections of H0
@@ -445,7 +452,8 @@ mnar.fun <- function(df){
 }
 
 #model that generates missing data
-miss.fun <- function(df, b.trt = log(1), b.y = log(1), b.X = log(1), do = 0.1){
+miss.fun <- function(df, b.trt = log(1), b.y = log(1), b.X = log(1), do = 0.1,
+                     method = 'pweight'){
   tmp <- df%>%
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
                                    TRUE ~ 0),
@@ -460,7 +468,7 @@ miss.fun <- function(df, b.trt = log(1), b.y = log(1), b.X = log(1), do = 0.1){
     dplyr::mutate(int = -log(1/do-1) - b.trt*etrt - b.y*ey - b.X*eX)
   tmp2 <- dplyr::left_join(tmp, tmp1, by="sim.id")%>%
     dplyr::mutate(p = 1/(1+exp(-1*(int + b.trt*trtn + b.y*y + b.X*X/10))))
-  
+  if(nrow(x2)>0){
   sampl.miss <- tmp2%>%
     group_by(sim.id)%>%
     sample_frac(do, weight = p)%>%
@@ -469,8 +477,8 @@ miss.fun <- function(df, b.trt = log(1), b.y = log(1), b.X = log(1), do = 0.1){
   
   out <- dplyr::left_join(tmp2,sampl.miss, by =c('sim.id','pat_id'))%>%
     dplyr::mutate(r = ifelse(is.na(r),0,r),
-                  y.m = ifelse(r==1,as.numeric(NA),y))#%>%
-   #dplyr::select(-y, -etrt, -eX, -ey, -b.trt, -b.y, -b.X, -int, -trtn)
+                  y.m = ifelse(r==1,as.numeric(NA), y))%>%
+   dplyr::select(-c(y, etrt, eX, ey, b.trt, b.y, b.X, int, trtn))
   
   return(out)
 }

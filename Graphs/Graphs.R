@@ -212,19 +212,17 @@ dev.off()
 ### Type-I Error - N Each 10000 ###
 ##################################
 
-dt.full.sum <- readRDS('DataSummaries/dtfullsum_each.rds')
+dt.full.sum <- readRDS('dtfullsum_each.rds')
 
 type1.full.plot <- dt.full.sum%>%select(p_C, M2, type1.Wald, type1.FM, type1.WN)%>%
   melt(id.vars = c("p_C","M2"))%>%
   mutate(Method = case_when(variable == "type1.Wald" ~ "Wald",
                             variable == "type1.FM"   ~ "Farrington-Manning",
-                            variable == "type1.WN"   ~ "Newcombe"))%>%
+                            variable == "type1.WN"   ~ "Wilson-Newcombe"))%>%
   select(-variable)%>%
-  rename(type1 = value)%>%
-  mutate(M21 = sprintf("Delta ~ %g",M2))
+  rename(type1 = value)
 
-type1.full.plot.res <- 
-  ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
+type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=Method))+
   geom_point(aes(color=Method))+
   geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2)+
   theme_bw()+
@@ -232,16 +230,15 @@ type1.full.plot.res <-
   scale_y_continuous(limits = c(0,0.05))+
   xlab("Proportion of events in active treatment")+
   ylab("Type-I error")+
-  theme(legend.position = "bottom",
-        text = element_text(size = 13),
-        strip.text = element_text(size = rel(0.7))) +
-  facet_wrap(~M21, labeller = label_parsed)
+  theme(legend.position = "bottom")+
+  ggtitle("Type-I errors for 10000 simulations")+
+  facet_wrap(~M2)
 
 temp <- plotly::ggplotly(type1.full.plot.res)
 
 htmlwidgets::saveWidget(temp,"temp.html")  
 
-pdf("../../Proposal/full_each_type1_10000.pdf")
+pdf("full_each_type1_10000.pdf")
 type1.full.plot.res
 dev.off()
 
@@ -251,7 +248,7 @@ dev.off()
 ############################
 
 
-dt.full.sum <- readRDS('DataSummaries/dtfullsum_each.rds')
+dt.full.sum <- readRDS('dtfullsum_each.rds')
 
 ss.full.plot <- dt.full.sum%>%select(p_C, M2, N.Wald, N.FM, N.WN)%>%
   melt(id.vars = c("p_C","M2"))%>%
@@ -269,9 +266,7 @@ ss.full.plot.res <- ggplot(data = ss.full.plot, aes(x=p_C, y=ss, fill=Method))+
   #scale_y_continuous(limits = c(0,0.05))+
   xlab("Proportion of events in active treatment")+
   ylab("Sample size")+
-  theme(legend.position = "bottom",
-        text = element_text(size = 13),
-        strip.text = element_text(size = rel(0.7)))+
+  theme(legend.position = "bottom")+
   ggtitle("Samaple size per scenario, per method")+
   facet_wrap(~M2)
 
@@ -301,9 +296,7 @@ ss.full.plot.res.diff <- ggplot(data = ss.full.plot.diff, aes(x=p_C, y=ss, fill=
   #scale_y_continuous(limits = c(0,0.05))+
   xlab("Proportion of events in active treatment")+
   ylab("Sample size differences")+
-  theme(legend.position = "bottom",
-        text = element_text(size = 13),
-        strip.text = element_text(size = rel(0.7)))+
+  theme(legend.position = "bottom")+
   ggtitle("Samaple size differences per scenario")+
   facet_wrap(~M2)
 
@@ -311,9 +304,9 @@ pdf("ss_perscenario_diff.pdf")
 ss.full.plot.res.diff
 dev.off()
 
-#################################
+###################################
 ### Type-I Error - Wald 20000 ###
-#################################
+##################################
 
 dt.full.sum <- readRDS('dtfullsum_wald20000.rds')
 
@@ -338,513 +331,5 @@ type1.full.plot.res <- ggplot(data = type1.full.plot, aes(x=p_C, y=type1, group=
 pdf("full_wald_type1_20000.pdf")
 type1.full.plot.res
 dev.off()
-
-#####################################################
-#### CCA Analysis Graphs - Type I Error #############
-#####################################################
-
-dt.full <- readRDS('DataSummaries/dtfullsum_each.rds')
-
-dt.full.wald <- dt.full%>%
-  dplyr::select(p_C, M2, type1.Wald)%>%
-  reshape2::melt(id.vars = c("p_C","M2"))%>%
-  dplyr::rename(type1full = value)%>%
-  dplyr::mutate(TYPE='wald')%>%
-  dplyr::select(-variable)
-
-dt.full.fm <- dt.full%>%
-  dplyr::select(p_C, M2, type1.FM)%>%
-  reshape2::melt(id.vars = c("p_C","M2"))%>%
-  dplyr::rename(type1full = value)%>%
-  dplyr::mutate(TYPE='fm')%>%
-  dplyr::select(-variable)
-
-dt.full.wn <- dt.full%>%
-  dplyr::select(p_C, M2, type1.WN)%>%
-  reshape2::melt(id.vars = c("p_C","M2"))%>%
-  dplyr::rename(type1full = value)%>%
-  dplyr::mutate(TYPE='wn')%>%
-  dplyr::select(-variable)
-
-dt.full1 <- dt.full.wald%>%
-  dplyr::bind_rows(dt.full.fm, dt.full.wn)%>%
-  dplyr::right_join(dt.full%>%
-                      dplyr::select(scenario.id, p_C, M2), by=c('p_C','M2'))
-
-dt.full2 <- dt.full1%>%
-  dplyr::mutate(MISSING='mcar')%>%
-  dplyr::bind_rows(dt.full1%>%
-                     dplyr::mutate(MISSING='mar'),
-                   dt.full1%>%
-                     dplyr::mutate(MISSING='mnar') )
-
-
-cca <- readRDS('DataSummaries/cca.rds')
-
-cca.full <- cca%>%
-  dplyr::rename(p_C=p_T)%>%
-  dplyr::left_join(dt.full1%>%
-                      dplyr::select(scenario.id, TYPE, type1full), by = c('scenario.id','TYPE'))
-
-#CCA Wald MCAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wald', MISSING=='mcar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-  
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: Wald, MCAR, CCA Analysis")
-  
-
-pdf("final_outputs/type1_ccawaldmcar.pdf")
-type1.g
-dev.off()
-
-#CCA Wald MAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wald', MISSING=='mar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I: Wald, MAR, CCA Analysis New")
-
-
-pdf("final_outputs/type1_ccawaldmarnew.pdf")
-type1.g
-dev.off()
-
-
-#CCA Wald MNAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wald', MISSING=='mnar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.15)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: Wald, MNAR, CCA Analysis New")
-
-
-pdf("final_outputs/type1_ccawaldmnarnew.pdf")
-type1.g
-dev.off()
-
-
-#CCA FM MCAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='fm', MISSING=='mcar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: FM, MCAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccafmmcar.pdf")
-type1.g
-dev.off()
-
-#CCA FM MAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='fm', MISSING=='mar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: FM, MAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccafmmar.pdf")
-type1.g
-dev.off()
-
-
-#CCA FM MNAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='fm', MISSING=='mnar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: FM, MNAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccafmmnar.pdf")
-type1.g
-dev.off()
-
-
-#CCA WN MCAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wn', MISSING=='mcar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: WN, MCAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccawnmcar.pdf")
-type1.g
-dev.off()
-
-#CCA WN MAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wn', MISSING=='mar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: WN, MAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccawnmar.pdf")
-type1.g
-dev.off()
-
-
-#CCA FM MNAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wn', MISSING=='mnar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: WN, MNAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccawnmnar.pdf")
-type1.g
-dev.off()
-
-#####################################################
-#### CCA Analysis Graphs - Power        #############
-#####################################################
-
-dt.full <- readRDS('DataSummaries/dtfullsum_each.rds')
-
-dt.full.wald <- dt.full%>%
-  dplyr::select(p_C, M2, power.Wald)%>%
-  reshape2::melt(id.vars = c("p_C","M2"))%>%
-  dplyr::rename(powerfull = value)%>%
-  dplyr::mutate(TYPE='wald')%>%
-  dplyr::select(-variable)
-
-dt.full.fm <- dt.full%>%
-  dplyr::select(p_C, M2, power.FM)%>%
-  reshape2::melt(id.vars = c("p_C","M2"))%>%
-  dplyr::rename(powerfull = value)%>%
-  dplyr::mutate(TYPE='fm')%>%
-  dplyr::select(-variable)
-
-dt.full.wn <- dt.full%>%
-  dplyr::select(p_C, M2, power.WN)%>%
-  reshape2::melt(id.vars = c("p_C","M2"))%>%
-  dplyr::rename(powerfull = value)%>%
-  dplyr::mutate(TYPE='wn')%>%
-  dplyr::select(-variable)
-
-dt.full1 <- dt.full.wald%>%
-  dplyr::bind_rows(dt.full.fm, dt.full.wn)%>%
-  dplyr::right_join(dt.full%>%
-                      dplyr::select(scenario.id, p_C, M2), by=c('p_C','M2'))
-
-cca <- readRDS('DataSummaries/cca.rds')
-
-cca.full <- cca%>%
-  dplyr::rename(p_C=p_T)%>%
-  dplyr::right_join(dt.full1%>%
-                      dplyr::select(scenario.id, TYPE, powerfull), by = c('scenario.id','TYPE'))
-
-#CCA Wald MCAR
-power.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wald', MISSING=='mcar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-power.g <- power.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, power)) +
-  geom_segment(aes(x = PERCENT, y = powerfull, xend = PERCENT, yend = power), colour="red") +
-  geom_point(size=0.5) +
-  scale_y_continuous(limits = c(0.65,1)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Power")+
-  ggtitle("Power: Wald, MCAR, CCA Analysis")
-
-
-pdf("final_outputs/power_ccawaldmcar.pdf")
-power.g
-dev.off()
-
-#CCA Wald MAR
-power.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wald', MISSING=='mar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-power.g <- power.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, power)) +
-  geom_segment(aes(x = PERCENT, y = powerfull, xend = PERCENT, yend = power), colour="red") +
-  geom_point(size=0.5) +
-  scale_y_continuous(limits = c(0.65,1)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Power")+
-  ggtitle("Power: Wald, MAR, CCA Analysis")
-
-
-pdf("final_outputs/power_ccawaldmar.pdf")
-power.g
-dev.off()
-
-
-#CCA Wald MNAR
-power.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wald', MISSING=='mnar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-power.g <- power.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, power)) +
-  geom_segment(aes(x = PERCENT, y = powerfull, xend = PERCENT, yend = power), colour="red") +
-  geom_point(size=0.5) +
-  scale_y_continuous(limits = c(0.65,1)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Power")+
-  ggtitle("Power: Wald, MNAR, CCA Analysis")
-
-
-pdf("final_outputs/power_ccawaldmnar.pdf")
-power.g
-dev.off()
-
-##### Stopped here
-#CCA FM MCAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='fm', MISSING=='mcar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: FM, MCAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccafmmcar.pdf")
-type1.g
-dev.off()
-
-#CCA FM MAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='fm', MISSING=='mar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: FM, MAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccafmmar.pdf")
-type1.g
-dev.off()
-
-
-#CCA FM MNAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='fm', MISSING=='mnar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: FM, MNAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccafmmnar.pdf")
-type1.g
-dev.off()
-
-
-#CCA WN MCAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wn', MISSING=='mcar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: WN, MCAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccawnmcar.pdf")
-type1.g
-dev.off()
-
-#CCA WN MAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wn', MISSING=='mar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: WN, MAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccawnmar.pdf")
-type1.g
-dev.off()
-
-
-#CCA FM MNAR
-type1.gdt <- cca.full%>%
-  dplyr::filter(TYPE=='wn', MISSING=='mnar')%>%
-  dplyr::mutate(scenario.idc = sprintf('p=%s & M=%s',p_C,M2))
-
-
-type1.g <- type1.gdt%>%
-  ggplot2::ggplot(aes(PERCENT, type1)) +
-  geom_segment(aes(x = PERCENT, y = type1full, xend = PERCENT, yend = type1), colour="red") +
-  geom_point(size=0.5) +
-  geom_hline(yintercept = c(0.9*alpha, 1.1*alpha), linetype=2) +
-  scale_y_continuous(limits = c(0,0.05)) +
-  facet_wrap(~ scenario.idc) +
-  theme_bw() +
-  xlab("% of Missing Observations")+
-  ylab("Type-I error")+
-  ggtitle("Type I Error: WN, MNAR, CCA Analysis")
-
-
-pdf("final_outputs/type1_ccawnmnar.pdf")
-type1.g
-dev.off()
-
 
 
