@@ -1,0 +1,18 @@
+executable = {{rfile}}
+universe = vanilla
+Requirements = ParallelSchedulingGroup == "stats group"
++AccountingGroup = "group_statistics_shortjob.yuliasidi"
+
+should_transfer_files = YES
+when_to_transfer_output = ON_EXIT
+
+arguments = $(Process)
+output    = out/fm-$(Process).Rout
+error     = err/fm-$(Process).err
+log       = log/fm.log
+
+initialdir = jobs/run
+transfer_input_files = ../myfiles/lib/, init.R, funs/ni.d.R, funs/add.X.R, funs/FM.CI.R, funs/miss.fun.R, funs/mice.run.R, funs/mi.comb.R, funs/miss.param.assign.R, funs/p.rmle.fm.R, ss.bounds.rds
+# transfer_output_files = 
+
+Queue {{njobs}}

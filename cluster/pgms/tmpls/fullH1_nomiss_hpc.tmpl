@@ -1,0 +1,61 @@
+source("init.R")
+source("funs/ni.d.R")
+source("funs/add.X.R")
+source("funs/wald.ci.R")
+source("funs/miss.fun.R")
+source("funs/mice.run.R")
+source("funs/mi.comb.R")
+source("funs/miss.param.assign.R")
+
+library(dplyr)
+
+ss.bounds <- readRDS("ss.bounds.rds")
+
+method <- 'wald'
+scenario <- {{scenario}}
+
+ss <- ss.bounds%>%
+  dplyr::filter(method == method, scenario.id == scenario)
+
+rho.val <- 'p30'
+
+library(parallel)
+cl <- makeCluster(Sys.getenv()["SLURM_NTASKS"], type = "MPI")
+
+system.time({
+  
+
+parallel::clusterExport(cl, varlist = ls())
+
+x1 <- 
+  parallel::clusterApply(cl,
+                         x = 1:10000, 
+                         fun=function(x){
+                           
+                           
+ library(tidyr, warn.conflicts = F, quietly = T)
+ library(dplyr, warn.conflicts = F, quietly = T)
+ library(purrr, warn.conflicts = F, quietly = T)
+ library(reshape2, warn.conflicts = F, quietly = T)
+ library(mice, warn.conflicts = F, quietly = T)
+  
+ set.seed(8273 + scenario + x)                                                   
+ #generate full data with desired correlation structure
+ dt.H0 <- ni.d(N_T = ss$n.arm,
+               N_C = ss$n.arm,
+               p_T = ss$p_C,
+               p_C = ss$p_C)%>%
+   add.X(rho=0.3, ss$ub)
+
+ dt.H0%>%wald.ci(M2 = ss$M2, 'y')%>%
+   mutate(strategy = 'no missing', missing ='none', sim.id = x)
+
+ })
+
+})
+saveRDS(x1, sprintf("results/outH1_%s_%s%d.rds",rho.val, method, scenario))
+
+
+
+
+
