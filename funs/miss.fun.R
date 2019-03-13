@@ -65,7 +65,7 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
       #best-case scenario
       out.ci.best <- out%>%
         dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,1))%>%
-        ci.method(M2,'y.m')%>%
+        ci.method(M2,'y')%>%
         dplyr::select(phat.d, ci.l, ci.u, reject.h0)%>%
         dplyr::mutate(strategy = 'best')
       

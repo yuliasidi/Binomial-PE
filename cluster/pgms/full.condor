@@ -1,4 +1,4 @@
-executable = fullH0set1_15_do10.R
+executable = fullH1set1_15_do10.R
 universe = vanilla
 Requirements = ParallelSchedulingGroup == "stats group"
 +AccountingGroup = "group_statistics_shortjob.yuliasidi"

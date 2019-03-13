@@ -30,7 +30,7 @@ purrr::pwalk(.l = sc.l,
              .f = function(scenario, do.val)
                cat(
                  whisker::whisker.render(
-                   readLines('cluster/pgms/fullH1_hpc.tmpl'),
+                   readLines('cluster/pgms/tmpls/fullH1_hpc.tmpl'),
                    data = list(scenario = scenario,
                                val = do.val)
                  ),
