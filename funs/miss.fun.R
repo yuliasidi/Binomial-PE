@@ -5,6 +5,7 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
                      sing.imp = TRUE, mice.anal = TRUE,
                      ci.method = FM.CI)
   {
+  
   #generate probability to be missing P(R=1) = p for each subject
   tmp <- df%>%
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
@@ -20,25 +21,36 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
                   p = 1/(1+exp(-1*(tmp$int + b.trt*trtn + b.Y*y + b.X*X/10))))
   
   if (b.Y==0 & b.X==0 & b.trt==0) {
+   
+    set.seed(84759)
     
-    sampl.miss <- tmp1%>%
-      dplyr::select(pat_id, p)%>%
-      dplyr::sample_frac(do, weight = p)%>%
-      dplyr::mutate(r = 1)%>%
-      dplyr::select(pat_id, r)
-    
-    out <- dplyr::left_join(tmp1, sampl.miss, by =c('pat_id'))%>%
-      dplyr::mutate(r = ifelse(is.na(r),0,r),
-                    y.m = ifelse(r==1,as.numeric(NA), y))
+    out <- tmp1 %>%
+      dplyr::mutate(r = sample(1:n(), replace = FALSE)) %>%
+      dplyr::arrange(r) %>%
+      dplyr::mutate(
+        r = dplyr::if_else(r <= n() * do, 1, 0),
+        y.m = dplyr::if_else(r==1,NA_integer_, y)
+      )
+   
+    # sampl.miss <- tmp1%>%
+    #   dplyr::select(pat_id, p)%>%
+    #   dplyr::sample_frac(do, weight = p)%>%
+    #   dplyr::mutate(r = 1)%>%
+    #   dplyr::select(pat_id, r)
+    # 
+    # out <- dplyr::left_join(tmp1, sampl.miss, by =c('pat_id'))%>%
+    #   dplyr::mutate(r = ifelse(is.na(r),0,r),
+    #                 y.m = ifelse(r==1,NA_real_, y))
   }
   
   else {
-   
+    set.seed(84750)
+    
      out <- tmp1%>%
       dplyr::arrange(desc(p))%>%
       dplyr::mutate(i = seq(1,length(pat_id),1))%>%
       dplyr::mutate(r = ifelse(i<do*length(pat_id),1,0))%>%
-      dplyr::mutate(y.m = ifelse(r==1,as.numeric(NA),y))%>%
+      dplyr::mutate(y.m = ifelse(r==1,NA_integer_,y))%>%
       dplyr::select(-i)
 
     }

@@ -33,23 +33,30 @@ t2.pp <- plotly::ggplotly(summ.type1.p)
 htmlwidgets::saveWidget(t2.pp, file = "H0_p30_wald29.html",selfcontained = TRUE)
 
 
-t <- readRDS("cluster/out/wald/outH1_p30_wald29_10.rds")
+summ.power <- pmap_df(ff.n1, .f = function(scenario, do){
+  t <-readRDS(sprintf("cluster/out/wald/outH1_p30_wald%d_%d.rds", scenario, do))
+  
+  t1 <- t%>%
+    dplyr::bind_rows()%>%
+    dplyr::group_by(strategy, missing, do)%>%
+    dplyr::summarise(power=mean(reject.h0))
+  
+  return(t1)
+  
+})
 
-t1<- bind_rows(t)
-
-t2 <- t1%>%
-  dplyr::group_by(strategy, missing)%>%
-  dplyr::summarise(power=mean(reject.h0))
-
-t2.p <- t2%>%ggplot(aes(x = missing, y = power)) +
+summ.power.p <- summ.power%>%
+  dplyr::filter(strategy!="mice m=10")%>%
+  ggplot(aes(x = missing, y = power)) +
   geom_point(aes(color = strategy)) +
   geom_hline(yintercept=0.9,
              linetype=2) +
-  scale_y_continuous(breaks = c(seq(0, 0.7, 0.1), seq(0.7, 1, 0.05)))
+  scale_y_continuous(breaks = c(seq(0, 0.7, 0.1), seq(0.7, 1, 0.05))) +
+  facet_wrap(~do)
 
-t2.pp <- plotly::ggplotly(t2.p)
+t2.pp <- plotly::ggplotly(summ.power.p)
 
-htmlwidgets::saveWidget(t2.pp, file = "H1_p30_wald29_10.html",selfcontained = TRUE)
+htmlwidgets::saveWidget(t2.pp, file = "H1_p30_wald29.html",selfcontained = TRUE)
 
 
 t <- readRDS("cluster/out/wald/nomiss/outH0_p30_wald15.rds")

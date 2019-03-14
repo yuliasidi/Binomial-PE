@@ -1,7 +1,7 @@
 
 session <- ssh::ssh_connect(Sys.getenv('UCONN_USER'))
 
-rfile.sub <- 'fullH1set1_15_do10.R'
+rfile.sub <- 'fullH0set2_15_do20.R'
 
 tmpl <- whisker::whisker.render(template = readLines('cluster/pgms/tmpls/full.condor.tmpl'), 
                                 data = list(rfile = rfile.sub,
