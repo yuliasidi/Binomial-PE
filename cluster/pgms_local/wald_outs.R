@@ -5,13 +5,13 @@ library(plotly)
 
 ff.n <- expand.grid(scenario = seq(1,30,2), do = c(10,20))
 
-ff.n1 <- as.list(ff.n%>%filter(scenario==29))
+ff.n1 <- as.list(ff.n%>%filter(scenario%in%c(21,23,25,27,29)))
 summ.type1 <- pmap_df(ff.n1, .f = function(scenario, do){
   t <-readRDS(sprintf("cluster/out/wald/outH0_p30_wald%d_%d.rds", scenario, do))
 
   t1 <- t%>%
     dplyr::bind_rows()%>%
-    dplyr::group_by(strategy, missing, do)%>%
+    dplyr::group_by(scenario.id, strategy, missing, do)%>%
     dplyr::summarise(type1=mean(reject.h0))
   
   return(t1)
@@ -26,11 +26,11 @@ summ.type1.p <- summ.type1%>%
   geom_hline(yintercept=c(0.9,1.1)*0.025,
              linetype=2) +
   scale_y_continuous(breaks = c(seq(0,0.05, 0.025), 0.075, seq(0.1, 1, 0.1))) +
-  facet_wrap(~do)
+  facet_wrap(do~ scenario.id)
 
 t2.pp <- plotly::ggplotly(summ.type1.p)
 
-htmlwidgets::saveWidget(t2.pp, file = "H0_p30_wald29.html",selfcontained = TRUE)
+htmlwidgets::saveWidget(t2.pp, file = "H0_p30_wald252729.html",selfcontained = TRUE)
 
 
 summ.power <- pmap_df(ff.n1, .f = function(scenario, do){
@@ -38,7 +38,7 @@ summ.power <- pmap_df(ff.n1, .f = function(scenario, do){
   
   t1 <- t%>%
     dplyr::bind_rows()%>%
-    dplyr::group_by(strategy, missing, do)%>%
+    dplyr::group_by(scenario.id, strategy, missing, do)%>%
     dplyr::summarise(power=mean(reject.h0))
   
   return(t1)

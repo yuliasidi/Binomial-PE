@@ -25,6 +25,34 @@ purrr::pwalk(.l = sc.l,
              })
 
 
+sc.n <- 
+  expand.grid(
+    scenario = seq(1,17,2),
+    do.val = seq(0.1,0.20,0.1),
+    setn = seq(1,4,1),
+    stringsAsFactors = FALSE)
+
+sc.n.l <- as.list(sc.n)
+
+
+purrr::pwalk(.l = sc.n.l,
+             .f = function(scenario, do.val, setn){
+               cat(
+                 whisker::whisker.render(
+                   readLines('cluster/pgms/tmpls/fullH0_hpc_setn.tmpl'),
+                   data = list(scenario = scenario,
+                               val = do.val,
+                               setn = setn)
+                 ),
+                 file = file.path('cluster/pgms/wald/setn',
+                                  sprintf("fullH0_%d_do%d_set%d.R", scenario, round(100*do.val,0), setn)
+                 ),
+                 sep='\n') 
+             })
+
+
+
+
 
 purrr::pwalk(.l = sc.l,
              .f = function(scenario, do.val)
