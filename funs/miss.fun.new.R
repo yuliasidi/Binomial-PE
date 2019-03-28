@@ -1,6 +1,6 @@
 
 #model that generates missing data
-miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.1,
+miss.fun.new <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.1,
                      dt.out = FALSE, 
                      sing.imp = TRUE, mice.anal = TRUE,
                      ci.method = FM.CI)
@@ -11,9 +11,9 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
                                    TRUE ~ 0))%>%
     dplyr::summarise(etrt = mean(trtn),
-                     eX = mean(X),
+                     eX = mean(X)/10,
                      ey = mean(y))%>%
-    dplyr::mutate(int = -log(1/do-1) - b.trt*etrt - b.Y*ey - b.X*eX/10)
+    dplyr::mutate(int = -log(1/do-1) - b.trt*etrt - b.Y*ey - b.X*eX)
   
   tmp1 <- df%>%
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
@@ -32,7 +32,6 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
         y.m = dplyr::if_else(r==1,NA_integer_, y)
       )
    
-    
     # sampl.miss <- tmp1%>%
     #   dplyr::select(pat_id, p)%>%
     #   dplyr::sample_frac(do, weight = p)%>%
@@ -56,11 +55,6 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
 
     }
   
-  #calculate do rates per arm
-  do.arm <- out%>%
-    dplyr::group_by(trt)%>%
-    summarise(do = mean(r))%>%
-    tidyr::spread(key = trt, value = 'do')
   
 
   if (dt.out==TRUE){
@@ -101,7 +95,7 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
     #mice
   if (mice.anal==TRUE){
     out.ci.mice <- out%>%
-      mice.run(n.mi = num.mi, ci.method=ci.method, M2=M2)%>%
+      mice.run.perarm(n.mi = num.mi, ci.method=ci.method, M2=M2)%>%
       dplyr::mutate(strategy = sprintf('mice m=%d',num.mi))%>%
       dplyr::rename(phat.d = qbar)%>%
       dplyr::select(phat.d, ci.l, ci.u, reject.h0, strategy)
@@ -124,9 +118,6 @@ miss.fun <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do = 0.
     out.ci <- dplyr::bind_rows(out.ci.cca, out.ci.best, out.ci.worst)
   }  
    
-    out.ci <- out.ci %>%
-      dplyr::mutate(do.C = do.arm$C, do.T = do.arm$T)
-    
     return(out.ci)
 
   }

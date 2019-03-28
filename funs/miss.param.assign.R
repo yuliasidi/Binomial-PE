@@ -12,19 +12,19 @@ miss.param.assign <- function(df){
   b.X2 <- -1
   
   # MAR3: b.trt=2, b.y=0, b.X=1
-  b.trt3 <- 0.5
+  b.trt3 <- 0.1
   b.X3 <- 1
   
   # MAR4: b.trt=-0.5, b.y=0, b.X=-1
-  b.trt4 <- -0.5
+  b.trt4 <- -0.1
   b.X4 <- -1
   
   # MAR5: b.trt=0.5, b.y=0, b.X=-1
-  b.trt5 <- 0.5
+  b.trt5 <- .1
   b.X5 <- -1
   
   # MAR6: b.trt=-0.5, b.y=0, b.X=1
-  b.trt6 <- -0.5
+  b.trt6 <- -0.1
   b.X6 <- 1
   
   # MNAR1: b.trt=-.5, b.y=0, b.X=1
@@ -34,7 +34,7 @@ miss.param.assign <- function(df){
   
   # MNAR2: b.trt=-0.5, b.y=0, b.X=1
   b.trt8 <- 0
-  b.X8 <-  1
+  b.X8 <-  2
   b.Y8 <- -0.5
   
   df%>%
