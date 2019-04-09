@@ -1,4 +1,4 @@
-source("init.R")
+source("init_m5.R")
 source("funs/ni.d.R")
 source("funs/add.X.R")
 source("funs/wald.ci.R")
@@ -19,7 +19,7 @@ ss <- ss.bounds%>%
 
 do.val <- {{val}}
 
-rho.val <- 'p30'
+rho.val <- '{{rc}}'
 
 setn <- {{setn}}
 
@@ -33,7 +33,7 @@ parallel::clusterExport(cl, varlist = ls())
 
 x1 <- 
   parallel::clusterApply(cl,
-                         x = 1:2500, 
+                         x = 1:5000, 
                          fun=function(x){
                            
                            
@@ -43,19 +43,17 @@ x1 <-
  library(reshape2, warn.conflicts = F, quietly = T)
  library(mice, warn.conflicts = F, quietly = T)
   
- set.seed(765 + scenario + x + setn)                                                   
+ set.seed(10000*scenario + x)                                                   
  #generate full data with desired correlation structure
  dt.H0 <- ni.d(N_T = ss$n.arm,
                N_C = ss$n.arm,
                p_T = ss$p_C - ss$M2,
                p_C = ss$p_C)%>%
-   add.X(rho=0.3, ss$ub)
+   add.X(rho={{rval}}, ss${{ulb}}b)
  
  #define missingness parameters and do rates
- m.param <- 
-   tibble::tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mnar1", "mnar2"))
- m.param <- m.param%>%miss.param.assign()
-                           
+m.param <- miss.param.assign(do = do.val)
+
  #impose missing values and perform analysis
   m.param%>%
    group_split(missing)%>%
@@ -76,7 +74,7 @@ x1 <-
  })
 
 })
-saveRDS(x1, sprintf("results/outH0_%s_%s%d_%d_set%d.rds",rho.val, method, scenario, round(100*do.val,0), setn))
+saveRDS(x1, sprintf("results/outH0_%s_%s%d_%d_set%d_mi5.rds",rho.val, method, scenario, round(100*do.val,0), setn))
 
 
 

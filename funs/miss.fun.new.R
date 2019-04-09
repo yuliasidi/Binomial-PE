@@ -11,9 +11,9 @@ miss.fun.new <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do 
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
                                    TRUE ~ 0))%>%
     dplyr::summarise(etrt = mean(trtn),
-                     eX = mean(X)/10,
+                     eX = mean(X),
                      ey = mean(y))%>%
-    dplyr::mutate(int = -log(1/do-1) - b.trt*etrt - b.Y*ey - b.X*eX)
+    dplyr::mutate(int = -log(1/do-1) - b.trt*etrt - b.Y*ey - b.X*eX/10)
   
   tmp1 <- df%>%
     dplyr::mutate(trtn = case_when(trt=='T' ~ 1, 
@@ -32,6 +32,7 @@ miss.fun.new <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do 
         y.m = dplyr::if_else(r==1,NA_integer_, y)
       )
    
+    
     # sampl.miss <- tmp1%>%
     #   dplyr::select(pat_id, p)%>%
     #   dplyr::sample_frac(do, weight = p)%>%
@@ -55,6 +56,11 @@ miss.fun.new <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do 
 
     }
   
+  #calculate do rates per arm
+  do.arm <- out%>%
+    dplyr::group_by(trt)%>%
+    summarise(do = mean(r))%>%
+    tidyr::spread(key = trt, value = 'do')
   
 
   if (dt.out==TRUE){
@@ -118,6 +124,9 @@ miss.fun.new <- function(df, M2, b.trt = log(1), b.Y = log(1), b.X = log(1), do 
     out.ci <- dplyr::bind_rows(out.ci.cca, out.ci.best, out.ci.worst)
   }  
    
+    out.ci <- out.ci %>%
+      dplyr::mutate(do.C = do.arm$C, do.T = do.arm$T)
+    
     return(out.ci)
 
   }

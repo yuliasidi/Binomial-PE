@@ -38,19 +38,17 @@ system.time({
   
 
   
- set.seed(8273 + idx + scenario + setn)                                                   
+ set.seed(10000*scenario + idx)                                                   
  #generate full data with desired correlation structure
  dt.H0 <- ni.d(N_T = ss$n.arm,
                N_C = ss$n.arm,
-               p_T = ss$p_T - ss$M2,
-               p_C = ss$p_T)%>%
+               p_T = ss$p_C - ss$M2,
+               p_C = ss$p_C)%>%
    add.X(rho=0.3, ss$ub)
  
  #define missingness parameters and do rates
- m.param <- 
-   tibble::tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mnar1", "mnar2"))
- m.param <- m.param%>%miss.param.assign()
-                           
+m.param <- miss.param.assign(do = do.val)
+
  #impose missing values and perform analysis
 x1 <-  m.param%>%
    split(.$missing)%>%

@@ -5,7 +5,7 @@ sc <-
   expand.grid(
     scenario = seq(1,30,2),
     do.val = seq(0.1,0.20,0.1),
-    setn = c(1,2),
+    setn = c(1),
     stringsAsFactors = FALSE)
 
 sc.l <- as.list(sc)
