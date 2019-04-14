@@ -47,7 +47,7 @@ x1 <-
  #generate full data with desired correlation structure
  dt.H0 <- ni.d(N_T = ss$n.arm,
                N_C = ss$n.arm,
-               p_T = ss$p_C - ss$M2,
+               p_T = ss$p_C,
                p_C = ss$p_C)%>%
    add.X(rho={{rval}}, ss${{ulb}}b)
  
@@ -68,13 +68,13 @@ m.param <- miss.param.assign(do = do.val)
                  p_C = ss$p_C,
                  p_T = ss$p_C,
                  M2 = ss$M2,
-                 type = 't.H0',
+                 type = 't.H1',
                  do = do.val,
                  sim.id = x)
  })
 
 })
-saveRDS(x1, sprintf("results/outH0_%s_%s%d_%d_set%d_mi5.rds",rho.val, meth, scenario, round(100*do.val,0), setn))
+saveRDS(x1, sprintf("results/outH1_%s_%s%d_%d_set%d_mi5.rds",rho.val, meth, scenario, round(100*do.val,0), setn))
 
 
 

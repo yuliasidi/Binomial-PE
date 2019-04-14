@@ -56,3 +56,72 @@ ss <- ass.for.ss%>%
 
 
 saveRDS(ss.bounds, "cluster/ss.bounds.rds")
+
+
+
+######
+ss.bounds<-readRDS("cluster/ss.bounds.rds")
+
+ss.wald<-ss.bounds%>%filter(method=="wald")
+
+SS_Wald_FM_WN_power90 <- readRDS("~/Desktop/Dissertation/Binomial PE/Binomial_PE_Progs/Old Outputs/SS_Wald_FM_WN_power90.rds")
+
+wn.ss <- SS_Wald_FM_WN_power90%>%
+  mutate(n.arm = N.total.WN/2)%>%
+  select(scenario.id, n.arm)
+
+wn.ss1<-left_join(ss.wald%>%select(-c(n.arm,lb,ub)), wn.ss, by = "scenario.id")%>%
+  mutate(method="wn")%>%
+  dplyr::mutate(bounds = pmap(list(p_T = p_T, M2 = M2), 
+                              .f = function(p_T, M2){
+                                biv.function(rbinom(1000000, 1, p_T + M2/2), 
+                                             rnorm(1000000,4,1), 
+                                             desired.cor=0.3, 
+                                             pearson=F,
+                                             spearman=T) 
+                              }))%>%
+  dplyr::mutate(lb = map_dbl(bounds, .f = function(df) df$bounds[1]),
+                ub = map_dbl(bounds, .f = function(df) df$bounds[2]))%>%
+  dplyr::select(-bounds)
+
+ss.bounds1 <- bind_rows(ss.bounds,wn.ss1)
+
+saveRDS(ss.bounds1, "cluster/ss.bounds.rds")
+
+
+
+#########
+wald.cat.C<-ss.wald%>%select(-c(lb,ub))%>%
+  mutate(method="wald.cat")%>%
+  dplyr::mutate(bounds = pmap(list(p_C = p_C, M2 = M2), 
+                              .f = function(p_C, M2){
+                                biv.function(rbinom(1000000, 1, p_C), 
+                                             rbinom(1000000,1,0.5), 
+                                             desired.cor=0.1, 
+                                             pearson=F,
+                                             spearman=T) 
+                              }))%>%
+  dplyr::mutate(lb.C = map_dbl(bounds, .f = function(df) df$bounds[1]),
+                ub.C = map_dbl(bounds, .f = function(df) df$bounds[2]))%>%
+  dplyr::select(-bounds)
+
+
+wald.cat.T<-ss.wald%>%select(-c(lb,ub))%>%
+  mutate(method="wald.cat")%>%
+  dplyr::mutate(bounds = pmap(list(p_T = p_C - M2), 
+                              .f = function(p_T){
+                                biv.function(rbinom(1000000, 1, p_T), 
+                                             rbinom(1000000,1,0.5), 
+                                             desired.cor=0.1, 
+                                             pearson=F,
+                                             spearman=T) 
+                              }))%>%
+  dplyr::mutate(lb.T = map_dbl(bounds, .f = function(df) df$bounds[1]),
+                ub.T = map_dbl(bounds, .f = function(df) df$bounds[2]))%>%
+  dplyr::select(-bounds)
+
+wald.cat <- left_join(wald.cat.C,wald.cat.T%>%
+                        dplyr::select(scenario.id, lb.T, ub.T), by = "scenario.id")
+
+saveRDS(wald.cat, "cluster/ss.boundscat.rds")
+

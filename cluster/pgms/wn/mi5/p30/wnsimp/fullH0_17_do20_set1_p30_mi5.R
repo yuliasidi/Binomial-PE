@@ -1,27 +1,26 @@
 source("init_m5.R")
 source("funs/ni.d.R")
 source("funs/add.X.R")
-source("funs/wald.ci.R")
-source("funs/miss.fun.R")
-source("funs/mice.run.R")
-source("funs/mi.comb.R")
+source("funs/wn.ci.R")
+source("funs/miss.fun.wnsimp.R")
+source("funs/mice.run.wncomb.simp.R")
 source("funs/miss.param.assign.R")
 
 library(dplyr)
 
 ss.bounds <- readRDS("ss.bounds.rds")
 
-method <- 'wald'
-scenario <- {{scenario}}
+method <- 'wnsimp'
+scenario <- 17
 
 ss <- ss.bounds%>%
-  dplyr::filter(method == "wald", scenario.id == scenario)
+  dplyr::filter(method == "wn", scenario.id == scenario)
 
-do.val <- {{val}}
+do.val <- 0.2
 
-rho.val <- '{{rc}}'
+rho.val <- 'p30'
 
-setn <- {{setn}}
+setn <- 1
 
 library(parallel)
 cl <- makeCluster(Sys.getenv()["SLURM_NTASKS"], type = "MPI")
@@ -49,7 +48,7 @@ x1 <-
                N_C = ss$n.arm,
                p_T = ss$p_C - ss$M2,
                p_C = ss$p_C)%>%
-   add.X(rho={{rval}}, ss${{ulb}}b)
+   add.X(rho=0.3, ss$ub)
  
  #define missingness parameters and do rates
 m.param <- miss.param.assign(do = do.val)
@@ -59,9 +58,9 @@ m.param <- miss.param.assign(do = do.val)
    group_split(missing)%>%
    purrr::set_names(sort(m.param$missing))%>%
    purrr::map_df(.f=function(xx,df){
-     miss.fun(df = dt.H0, b.trt = xx$b.trt, b.Y = xx$b.Y,b.X = xx$b.X, do = do.val,
+     miss.fun.wnsimp(df = dt.H0, b.trt = xx$b.trt, b.Y = xx$b.Y,b.X = xx$b.X, do = do.val,
               M2 = ss$M2,
-              ci.method = wald.ci,
+              ci.method = wn.ci,
               mice.anal = TRUE)
      },df = y, .id = 'missing')%>%
    dplyr::mutate(scenario.id = ss$scenario.id,
@@ -74,7 +73,7 @@ m.param <- miss.param.assign(do = do.val)
  })
 
 })
-saveRDS(x1, sprintf("results/outH0_%s_%s%d_%d_set%d_mi5.rds",rho.val, meth, scenario, round(100*do.val,0), setn))
+saveRDS(x1, sprintf("results/outH0_%s_%s%d_%d_set%d_mi5.rds",rho.val, method, scenario, round(100*do.val,0), setn))
 
 
 

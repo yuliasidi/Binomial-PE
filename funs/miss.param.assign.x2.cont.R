@@ -1,4 +1,4 @@
-miss.param.assign <- function(do = 0.2){
+miss.param.assign.x2.cont <- function(do = 0.2){
 
 
   if(do == 0.2){
@@ -9,7 +9,7 @@ miss.param.assign <- function(do = 0.2){
                       bx2 = c(0, 0, 0, 0, 0, 0, 0, 0),
                       by = c(0, 0, 0, 0, 0, 0, 0, 0)) 
   }
-  
+    
   if(do == 0.1){
   
     m.param <- tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5"),

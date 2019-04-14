@@ -2,16 +2,20 @@ mice.run <- function(dt, n.mi = 5, method = "logreg", M2,
                      ci.method=ci.method){
   
   dt.mice <- dt%>%
-    dplyr::select(trt,y.m,X)%>%
+    dplyr::select(-trtn)%>%
     dplyr::mutate(y.m = as.factor(y.m),
                   trt = as.factor(trt))
+  
+  predM <- mice::make.predictorMatrix(data=dt.mice)
+  predM[, "pat_id"] <- 0
   
   dt.mice.imp <- mice::mice(
     data = dt.mice,
     m=n.mi,
     method = method,
+    predictorMatrix=predM,
     seed = 9875,
-    maxit = 100,
+    maxit = 20,
     printFlag = FALSE
   )
   
