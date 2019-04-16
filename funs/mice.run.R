@@ -1,20 +1,29 @@
 mice.run <- function(dt, n.mi = 5, method = "logreg", M2,
-                     ci.method=ci.method){
+                     ci.method=ci.method, t.inc = TRUE, seed.mice){
   
-  dt.mice <- dt%>%
-    dplyr::select(-trtn)%>%
-    dplyr::mutate(y.m = as.factor(y.m),
-                  trt = as.factor(trt))
+    dt.mice <- dt%>%
+      dplyr::select(-trtn)%>%
+      dplyr::mutate(y.m = as.factor(y.m),
+                    trt = as.factor(trt))  
+
   
   predM <- mice::make.predictorMatrix(data=dt.mice)
+  if (t.inc){
   predM[, "pat_id"] <- 0
+  }
+  
+  else {
+    predM[, "pat_id"] <- 0
+    predM[, "trt"] <- 0
+    
+  }
   
   dt.mice.imp <- mice::mice(
     data = dt.mice,
     m=n.mi,
     method = method,
     predictorMatrix=predM,
-    seed = 9875,
+    seed = seed.mice,
     maxit = 20,
     printFlag = FALSE
   )

@@ -5,7 +5,7 @@ source("funs/wald.ci.R")
 source("funs/anal.miss.run.R")
 source("funs/mice.run.R")
 source("funs/mi.comb.R")
-source("funs/miss.param.assign.2x.cont.R")
+source("funs/miss.param.assign.x2.cont.R")
 source("funs/norm.run.R")
 
 library(tidyr, warn.conflicts = F, quietly = T)
@@ -28,11 +28,11 @@ do.val <- 0.2
 
 m.param <- tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7"),
                     bt = c(0, 0, 0.3, 0.6, .9, -0.3, -0.6, -.9),
-                    bx1 = c(0, 2, 2, 2, 2, 2, 2, 2),
-                    bx2 = c(0, 0, 0, 0, 0, 0, 0, 0),
+                    bx2 = c(0, 2, 2, 2, 2, 2, 2, 2),
+                    bx1 = c(0, 0, 0, 0, 0, 0, 0, 0),
                     by = c(0, 0, 0, 0, 0, 0, 0, 0)) 
  
- x1 <- parallel::mclapply(X = 1:500, 
+ x1 <- parallel::mclapply(X = 1:50, 
                            mc.cores = 4,
                            FUN= function(x)
                            {
@@ -40,7 +40,7 @@ m.param <- tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5", "m
    set.seed(10000*scenario + x)                                                   
                              
    dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
-                         mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 10, r12 = 0.3, b1 = 0.1, b2 = 0.05) 
+                         mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = 0.4, b1 = 0.5, b2 = 0.05) 
    
    m.param%>%
      dplyr::mutate(results = purrr::pmap(list(b.trt=bt, b.Y=by, b.X1=bx1, b.X2=bx2), 
@@ -69,7 +69,7 @@ m.param <- tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5", "m
  
   x1.do<-bind_rows(x1)%>%
     unnest()%>%
-    dplyr::filter(seq(1,n(),1)%in%c(seq(2,n(),2)))%>%
+    dplyr::filter(seq(1,n(),1)%in%c(seq(2,n(),3)))%>%
     unnest()
   
   x1.do%>%

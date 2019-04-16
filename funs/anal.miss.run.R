@@ -4,7 +4,9 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, do = 0
                      dt.out = FALSE, 
                      mice.anal = TRUE,
                      norm.anal = FALSE,
-                     ci.method = FM.CI)
+                     ci.method = FM.CI,
+                     t.inc = TRUE,
+                     seed.mice = seed.mice)
   {
   
   out<-miss.impose.x2.cont(df = df, b.trt = b.trt, b.Y = b.Y, b.X1 = b.X1, b.X2 = b.X2, do = do, seed = seed)
@@ -13,6 +15,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, do = 0
     dplyr::group_by(trt)%>%
     summarise(do = mean(is.na(y.m)))%>%
     tidyr::spread(key = trt, value = 'do')
+  check.rel <-summary(glm(y.m~as.factor(trt) + x1 + x2, out, family=binomial))$coefficients[,1]
   
   if (dt.out){  
     return(out)
@@ -50,7 +53,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, do = 0
     #mice
   if (mice.anal){
     out.ci.mice <- out%>%
-      mice.run(n.mi = num.mi, ci.method=ci.method, M2=M2)%>%
+      mice.run(n.mi = num.mi, ci.method=ci.method, M2=M2, t.inc = TRUE, seed.mice = seed.mice)%>%
       dplyr::mutate(strategy = sprintf('mice m=%d',num.mi))%>%
       dplyr::rename(phat.d = qbar)%>%
       dplyr::select(phat.d, ci.l, ci.u, reject.h0, strategy)
@@ -72,7 +75,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, do = 0
       
     }  
     
-    anal.return <- list(out.ci, do.arm)%>%purrr::set_names(c("ci","do"))
+    anal.return <- list(out.ci, do.arm, check.rel)%>%purrr::set_names(c("ci","do","glm"))
       
     return(anal.return)
       
