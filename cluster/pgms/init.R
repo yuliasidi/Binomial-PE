@@ -10,5 +10,5 @@ beta <- c(0.1)
 #n.sim <- 10000
 
 # # of imputations for MI
-num.mi=20
-
+num.n.mi <- 2
+num.m.mi <-100
