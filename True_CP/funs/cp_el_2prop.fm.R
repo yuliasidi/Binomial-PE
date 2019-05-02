@@ -12,7 +12,12 @@ cp_el_2prop.fm <- function(n1,p1,n2,p2,M2,alpha){
                   d = -x/n1*M2*(1 + M2))%>%
     dplyr::mutate(v = (b/(3*a))^3 - b*c/(6*a^2) + d/(2*a),
                   u = sign(v)*sqrt((b/(3*a))^2 - c/(3*a)),
-                  w = (pi+acos(v/(u^3)))/3)%>%
+                  u = ifelse(u!=0,u,0.00001),
+                  w_val = v/(u^3),
+                  w_val = case_when(w_val  >= 1 ~ as.numeric(1),
+                                           w_val <= (-1) ~ as.numeric(-1),
+                                           TRUE ~ as.numeric(w_val)),
+                  w = (pi+acos(w_val))/3)%>%
     dplyr::mutate(p1.rmle = 2*u*cos(w) - b/(3*a),
                   p2.rmle = p1.rmle - M2)%>%
     dplyr::select(-a, -b, -c, -d, -v, -u, -w, -theta)%>%
