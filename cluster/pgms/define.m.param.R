@@ -19,7 +19,7 @@ library(MASS, warn.conflicts = F, quietly = T)
 
 
 method <- 'wald'
-scenario <- 1
+scenario <- 21
 
 ss.bounds <- readRDS("cluster/ss.bounds.rds")
 ss <- ss.bounds%>%
@@ -291,7 +291,7 @@ do.val <- 0.1
 # than it should be
 
 m.param <- tibble(missing = c("mcar", "mar1", "mar2", "mar3", "mar4", "mar5", "mnar1", "mnar2"),
-                  bt   = c(0, 0, 0.5, 1, -0.5, -1, 0, 0),
+                  bt   = c(0, 0, 0.5, 1.05, -0.5, -1.05, 0, 0),
                   bx2  = c(0, 1.5, 1.5, 1.5, 1.5, 1.5, 0, 0),
                   bx1  = c(0, 0, 0, 0, 0, 0, 0, 0),
                   by   = c(0, 0, 0, 0, 0, 0, -0.4,  2),

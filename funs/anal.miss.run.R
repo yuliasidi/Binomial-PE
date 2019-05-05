@@ -27,7 +27,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, b.ty =
     if (sing.anal){
       #CCA
       out.ci.cca <- ci.method(out, M2,'y.m')%>%
-        dplyr::select(phat.d, ci.l, ci.u, reject.h0)%>%
+        dplyr::select(C_phat, T_phat, phat.d, ci.l, ci.u, reject.h0)%>%
         dplyr::mutate(strategy = 'cca')
       
       
@@ -36,7 +36,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, b.ty =
       out.ci.best <- out%>%
         dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,1))%>%
         ci.method(M2,'y')%>%
-        dplyr::select(phat.d, ci.l, ci.u, reject.h0)%>%
+        dplyr::select(C_phat, T_phat, phat.d, ci.l, ci.u, reject.h0)%>%
         dplyr::mutate(strategy = 'best')
       
       
@@ -44,7 +44,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, b.ty =
       out.ci.worst <- out%>%
         dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,0))%>%
         ci.method(M2, 'y')%>%
-        dplyr::select(phat.d, ci.l, ci.u, reject.h0)%>%
+        dplyr::select(C_phat, T_phat, phat.d, ci.l, ci.u, reject.h0)%>%
         dplyr::mutate(strategy = 'worst')
       
       out.ci <- bind_rows(out.ci.cca, out.ci.best, out.ci.worst)
