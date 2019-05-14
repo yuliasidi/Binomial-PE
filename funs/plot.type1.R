@@ -1,7 +1,7 @@
 plot.type1 <- function(df, do.val, p.title){
   df%>%
-    dplyr::filter(do==do.val&!is.na(missing.new))%>%
-    ggplot(aes(y=missing.new,x=type1,colour=strategy)) + 
+    dplyr::filter(do==do.val)%>%
+    ggplot(aes(y=missing.desc,x=type1,colour=strategy)) + 
     geom_point() + 
     facet_wrap(~flabel,ncol=2) + 
     geom_vline(xintercept=c(0.9,1.1)*0.025,

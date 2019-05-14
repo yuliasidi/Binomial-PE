@@ -12,7 +12,8 @@ FM.CI <- function(df, M2, y){
            var.d = p_C.rmle*(1 - p_C.rmle)/C_n + p_T.rmle*(1 - p_T.rmle)/T_n,
            ci.l = phat.d - qnorm(1-alpha)*sqrt(var.d),
            ci.u = phat.d + qnorm(1-alpha)*sqrt(var.d),
-           reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
+           reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))%>%
+    dplyr::rename(T_phat = p_T, C_phat = p_C)
   
   return(df1)
   

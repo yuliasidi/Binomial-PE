@@ -3,42 +3,43 @@ library(purrr)
 
 sc <- 
   expand.grid(
-    scenario = seq(1,30,2),
-    do.val = seq(0.1,0.20,0.1),
-    setn = c(1),
+    scenario = seq(17,17,1),
+    do.val = 0.2,
+    param = 1,
     stringsAsFactors = FALSE)
 
-sc.l <- as.list(sc)
 
 
-purrr::pwalk(.l = sc.l,
-             .f = function(scenario, do.val, setn){
+#build program for cca/best/worst analysis
+purrr::pwalk(.l = as.list(sc),
+             .f = function(scenario, do.val, param){
                cat(
                  whisker::whisker.render(
-                   readLines('cluster/pgms/tmpls/fullH0_condor.tmpl'),
-                   data = list(scenario = scenario,
+                   readLines('cluster/pgms/tmpls/2xcontH0_fm_sing.tmpl'),
+                   data = list(sc_id = scenario,
                                val = do.val,
-                               setn = setn)
+                               param_id = param)
                  ),
-                 file = file.path('cluster/pgms/fm',
-                                  sprintf("fullH0set%d_%d_do%d.R", setn, scenario, round(100*do.val,0))
+                 file = file.path('cluster/pgms/fm/2xcont',
+                                  sprintf("2xcontH0_sc%s_do%s_param%s_sing.R", 
+                                          scenario, round(100*do.val,0), param)
                  ),
                  sep='\n') 
              })
 
-
-
-purrr::pwalk(.l = sc.l,
-             .f = function(scenario, do.val, setn){
+#build program for nested mice analysis
+purrr::pwalk(.l = as.list(sc),
+             .f = function(scenario, do.val, param){
                cat(
                  whisker::whisker.render(
-                   readLines('cluster/pgms/tmpls/fullH1_condor.tmpl'),
-                   data = list(scenario = scenario,
+                   readLines('cluster/pgms/tmpls/2xcontH0_fm_mice.tmpl'),
+                   data = list(sc_id = scenario,
                                val = do.val,
-                               setn = setn)
+                               param_id = param)
                  ),
-                 file = file.path('cluster/pgms/fm',
-                                  sprintf("fullH1set%d_%d_do%d.R", setn, scenario, round(100*do.val,0))
+                 file = file.path('cluster/pgms/fm/2xcont',
+                                  sprintf("2xcontH0_sc%s_do%s_param%s_mice.R", 
+                                          scenario, round(100*do.val,0), param)
                  ),
                  sep='\n') 
              })

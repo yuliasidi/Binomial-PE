@@ -4,6 +4,7 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, b.ty =
                      dt.out = FALSE, 
                      sing.anal = TRUE,
                      mice.anal = FALSE,
+                     bw.anal = FALSE,
                      mu.C =  1, sd.C = 0,
                      mu.T =  1, sd.T = 0,
                      ci.method = FM.CI,
@@ -63,6 +64,19 @@ anal.miss.run <- function(df, M2, b.trt = 0, b.Y = 0, b.X1 = 0, b.X2 = 0, b.ty =
                     k.C.spec = sprintf("normal(%s, %s)", mu.C, sd.C),
                     k.T.spec = sprintf("normal(%s, %s)", mu.T, sd.T))
   }
+    
+    #bw for mnars only
+    if (bw.anal){
+      
+      out.ci <- out%>%
+        dplyr::mutate(y=ifelse(is.na(y.m)=="FALSE",y.m,
+                               ifelse(trt=="C",1,0)))%>%
+        ci.method(M2,'y')%>%
+        dplyr::select(C_phat, T_phat, phat.d, ci.l, ci.u, reject.h0)%>%
+        dplyr::mutate(strategy = 'bw')
+    }
+    
+    
     
     anal.return <- list(out.ci, do.arm, check.rel)%>%purrr::set_names(c("ci","do","glm"))
     

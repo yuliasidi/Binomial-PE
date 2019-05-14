@@ -1,4 +1,5 @@
 library(dplyr)
+library(tidyr)
 library(purrr)
 library(ggplot2)
 library(plotly)
@@ -6,6 +7,7 @@ library(plotly)
 source("funs/full.check.R")
 source("funs/do.check.R")
 source("funs/h0.sing.sum.R")
+source("funs/h0.mice.sum.R")
 source("funs/plot.type1.R")
 source("funs/plot.bias.R")
 source("funs/plot.power.R")
@@ -19,6 +21,13 @@ x1.sc21.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc21_do20_p
 x1.sc21.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc21_do20_param11.rds")
 x1.sc21.sing <- append(x1.sc21.sing1,x1.sc21.sing2)
 remove(x1.sc21.sing1, x1.sc21.sing2)
+
+
+x1.sc21.bw1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_bw_sc21_do20_param1.rds")
+x1.sc21.bw2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_bw_sc21_do20_param11.rds")
+x1.sc21.bw <- append(x1.sc21.bw1,x1.sc21.bw2)
+remove(x1.sc21.bw1, x1.sc21.bw2)
+
 
 x1.sc21.mice1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc21_do20_param1.rds")
 x1.sc21.mice2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc21_do20_param11.rds")
@@ -39,6 +48,12 @@ x1.sc17.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc17_do20_p
 x1.sc17.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc17_do20_param11.rds")
 x1.sc17.sing <- append(x1.sc17.sing1,x1.sc17.sing2)
 remove(x1.sc17.sing1, x1.sc17.sing2)
+
+x1.sc17.mice1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc17_do20_param1.rds")
+x1.sc17.mice2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc17_do20_param11.rds")
+x1.sc17.mice <- append(x1.sc17.mice1,x1.sc17.mice2)
+remove(x1.sc17.mice1, x1.sc17.mice2)
+
 
 x1.sc7.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc7_do20_param1.rds")
 x1.sc7.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc7_do20_param11.rds")
@@ -62,15 +77,18 @@ x1.sc26.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc26_do20_pa
 
 
 #check p_C, p_T and type1/power for full data
-full.check(x1.sc21.sing, 21)
-full.check(x1.sc19.sing, 19)
-full.check(x1.sc17.sing, 17)
-full.check(x1.sc7.sing, 7)
-full.check(x1.sc5.sing, 5)
-full.check(x1.sc3.sing, 3)
-full.check(x1.sc23.sing, 23)
-full.check(x1.sc25.sing, 25)
-full.check(x1.sc26.sing, 26)
+full.type1<-
+  bind_rows(
+    full.check(x1.sc21.sing, 21),
+    full.check(x1.sc19.sing, 19),
+    full.check(x1.sc17.sing, 17),
+    full.check(x1.sc7.sing, 7),
+    full.check(x1.sc5.sing, 5),
+    full.check(x1.sc3.sing, 3),
+    full.check(x1.sc23.sing, 23),
+    full.check(x1.sc25.sing, 25),
+    full.check(x1.sc26.sing, 26)
+  )
 
 #check do rates
 do.check(x1.sc21.sing)
@@ -85,145 +103,89 @@ do.check(x1.sc26.sing)
 
 
 h0.sing <-
-  bind_rows(h0.sing.sum(x1.sc21.sing),
-          h0.sing.sum(x1.sc19.sing),
-          h0.sing.sum(x1.sc17.sing)
+  bind_rows(
+    h0.sing.sum(x1.sc26.sing),
+    h0.sing.sum(x1.sc25.sing),
+    h0.sing.sum(x1.sc23.sing),
+    h0.sing.sum(x1.sc21.sing),
+    h0.sing.sum(x1.sc19.sing),
+    h0.sing.sum(x1.sc17.sing),
+    h0.sing.sum(x1.sc7.sing),
+    h0.sing.sum(x1.sc5.sing),
+    h0.sing.sum(x1.sc3.sing)
 
 )
 
-h0.sing.sum(x1.sc21.sing)%>%
+h0.sing.sum(x1.sc17.sing)%>%
   dplyr::filter(strategy=="cca")
 h0.mice.sum(x1.sc21.mice)
+h0.sing.sum(x1.sc21.bw)
 
-h0.sing.sum(x1.sc19.sing)%>%
-  dplyr::filter(strategy=="cca")
-h0.mice.sum(x1.sc19.mice)
+h0.mice.sum(x1.sc17.mice)
 
-h0.sing.sum(x1.sc7.sing)%>%
-  dplyr::filter(strategy=="cca")
-
-h0.sing.sum(x1.sc5.sing)%>%
-  dplyr::filter(strategy=="cca")
-
-h0.sing.sum(x1.sc3.sing)%>%
-  dplyr::filter(strategy=="cca")
-
-h0.sing.sum(x1.sc23.sing)%>%
-  dplyr::filter(strategy=="cca")
-
-h0.sing.sum(x1.sc25.sing)%>%
-  dplyr::filter(strategy=="cca")
-
-h0.sing.sum(x1.sc26.sing)%>%
-  dplyr::filter(strategy=="cca")
-
-x1.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc19_do20_param1.rds")
-x1.mice1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc21_do20_param11.rds")
-
-
-x1.sing.ci<-
-  bind_rows(
-    x1.sing%>%
-      purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
-      unnest()%>%
-      dplyr::filter(seq(1,n(),1)%in%c(seq(1,n(),3)))%>%
-      unnest(),
-    x1.sing1%>%
-      purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
-      unnest()%>%
-      dplyr::filter(seq(1,n(),1)%in%c(seq(1,n(),3)))%>%
-      unnest())
-x1.sing.ci%>%filter(strategy=="cca")%>%
-  mutate(bias = round((phat.d-M2)/M2,4))%>%
-  group_by(missing)%>%
-  summarise(type1 = mean(reject.h0),
-            bias = mean(bias))
-
-x1.mice.ci<-
-  bind_rows(
-    x1.mice%>%
-      purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
-      unnest()%>%
-      dplyr::filter(seq(1,n(),1)%in%c(seq(1,n(),3)))%>%
-      unnest(),
-    x1.mice1%>%
-      purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
-      unnest()%>%
-      dplyr::filter(seq(1,n(),1)%in%c(seq(1,n(),3)))%>%
-      unnest())
-
-x1.mice.ci%>%
-  mutate(bias = round((qbar-M2)/M2,4))%>%
-  group_by(missing)%>%
-  summarise(type1 = mean(reject.h0),
-            bias = mean(bias))
-
-x1.do<-
-  bind_rows(
-    
-    x1.sing%>%
-      purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
-      unnest()%>%
-      dplyr::filter(seq(1,n(),1)%in%c(seq(2,n(),3)))%>%
-      unnest(),
-    x1.sing1%>%
-      purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
-      unnest()%>%
-      dplyr::filter(seq(1,n(),1)%in%c(seq(2,n(),3)))%>%
-      unnest()
-  )
-
-do.check <- x1.do%>%group_by(scenario.id, missing)%>%
-  summarise(doC=mean(C), doT=mean(T), do.diff=round(mean(C)-mean(T),4))
-
-
-
-library(dplyr)
-library(purrr)
-library(ggplot2)
-library(plotly)
-
-source("funs/plot.type1.R")
-source("funs/plot.bias.R")
-source("funs/plot.power.R")
-
-
-t2.H0 <- x1.ci%>%
-  mutate(bias = round((phat.d-M2)/M2,4))%>%
-  dplyr::group_by(scenario.id, strategy, missing, do)%>%
-  dplyr::summarise(type1=mean(reject.h0), mean.bias = mean(bias))%>%
-  dplyr::mutate(missing.new = case_when(missing=="mar1" ~ "0%",
-                                        missing=="mar2" ~ "-5%",
-                                        missing=="mar3" ~ "-10%",
-                                        missing=="mar4" & do==0.1 ~  "5%",
-                                        missing=="mar4" & do==0.2 ~ "-15%",
-                                        missing=="mar5" & do==0.1 ~  "10%",
-                                        missing=="mar5" & do==0.2 ~  "5%",
-                                        missing=="mar6" ~ "10%",
-                                        missing=="mar7" ~ "15%",
-                                        missing== "mcar"~ "mcar"
-                                        #TRUE ~ as.character(missing)
-  ))%>%
-  dplyr::left_join(ss.bounds%>%
-                     filter(method=="wald")%>%
+h0.sing <- h0.sing%>%
+  dplyr::left_join(ss%>%
                      dplyr::select(scenario.id, p_C, M2, n.arm), by = "scenario.id")
 
-t2.H0$missing.new <- factor(t2.H0$missing.new,levels=unique(t2.H0$missing.new)[c(4,3,2,1,5,6,7,8,9,10)])
-#t2.H0$missing.new <- factor(t2.H0$missing.new,levels=unique(t2.H0$missing.new)[c(6,4,3,2,1,5,8,7,9,10)])
-t2.H0 <- t2.H0%>%
-  dplyr::mutate(flabel = sprintf('p[C]: %s, Delta: %s, n: %s',p_C, M2, n.arm))
+h0.sing$missing.desc <- factor(h0.sing$missing.desc,levels=unique(h0.sing$missing.desc)[c(4,3,2,1,5,6,7,8,9,10)])
+h0.sing <- h0.sing%>%
+  dplyr::mutate(flabel = sprintf('p[C]: %s, Delta: %s, n: %s',p_C, M2, n.arm))%>%
+  left_join(full.type1%>%
+              dplyr::select(scenario.id, reject.h0)%>%
+              dplyr::rename(type1.comp = reject.h0), by = "scenario.id")
 
 #type1.plot.20.mar.ccamice <-
-t2.H0%>%
-  filter(strategy%in%c("cca"))%>%
+h0.sing%>%
+  filter(strategy%in%c("cca"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
   plot.type1(do.val = 0.2, 
              p.title = "Type-I error: Overall drop-out rate of 20%")
 
 #bias.plot.20.mar.ccamice <-
-t2.H0%>%
-  filter(strategy%in%c("cca"))%>%
+h0.sing%>%
+  filter(strategy%in%c("cca"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
   plot.bias(do.val = 0.2, 
             p.title = "Bias: Overall drop-out rate of 20%")
+
+
+
+#type1.plot.20.mar.ccamice <-
+h0.sing%>%
+  filter(strategy%in%c("cca"), missing%in%c("mnar1", "mnar2"))%>%
+  plot.type1(do.val = 0.2, 
+             p.title = "Type-I error: Overall drop-out rate of 20%")
+
+#bias.plot.20.mar.ccamice <-
+h0.sing%>%
+  filter(strategy%in%c("cca"), missing%in%c("mnar1", "mnar2"))%>%
+  plot.bias(do.val = 0.2, 
+            p.title = "Bias: Overall drop-out rate of 20%")
+
+
+# h0.sing%>%
+#   filter(strategy%in%c("best"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
+#   plot.type1(do.val = 0.2, 
+#              p.title = "Type-I error: Overall drop-out rate of 20%")
+# 
+# h0.sing%>%
+#   filter(strategy%in%c("best"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
+#   plot.bias(do.val = 0.2, 
+#             p.title = "Bias: Overall drop-out rate of 20%")
+# 
+# 
+# h0.sing%>%
+#   filter(strategy%in%c("worst"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
+#   plot.type1(do.val = 0.2, 
+#              p.title = "Type-I error: Overall drop-out rate of 20%")
+# 
+# h0.sing%>%
+#   filter(strategy%in%c("worst"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
+#   plot.bias(do.val = 0.2, 
+#             p.title = "Bias: Overall drop-out rate of 20%")
+
+
+
+
+
 
 
 ss.bounds <- readRDS("cluster/ss.bounds.rds")
