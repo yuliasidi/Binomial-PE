@@ -126,17 +126,30 @@ mice.nonign.run <- function(dt, n.mi = 5, m.mi = 10, M2,
         tidyr::nest(-n)%>%
         dplyr::mutate(ci.out = purrr::map(data, ci.method, M2 = M2, y = "y.m"))%>%
         dplyr::select(-data)%>%
-        tidyr::unnest()%>%
-        dplyr::select(n, phat.d, var.d)
+        tidyr::unnest()#%>%
+        #dplyr::select(n, phat.d, var.d)
   
                 
   }))%>%
     tidyr::unnest()
   
- 
- mice.res <- nested.mi.res%>%
-   nested.mi.comb()%>%
-   dplyr::mutate(reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))
+
+ if(method!='wn') 
+   {
+   mice.res <- nested.mi.res%>%
+     dplyr::select(m, k.C, k.T, n, phat.d, var.d)%>%
+     nested.mi.comb()%>%
+     dplyr::mutate(reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))  
+    
+   }
+  
+  if(method=='wn') 
+  {
+    mice.res <- nested.mi.res%>%
+      nested.mi.comb.wn()%>%
+      dplyr::mutate(reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))  
+    
+  }
     
   return(mice.res)
   

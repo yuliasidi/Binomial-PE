@@ -8,7 +8,7 @@ source("cluster/pgms/init.R")
 source("funs/full.check.R")
 source("funs/do.check.R")
 source("funs/h0.sing.sum.R")
-source("funs/h0.mice.sum.R")
+source("funs/h0.mice.sum.wn.R")
 source("funs/plot.type1.R")
 source("funs/plot.bias.R")
 source("funs/plot.power.R")
@@ -16,29 +16,25 @@ source("funs/miss.desc.R")
 
 ss <- readRDS("cluster/ss.bounds.rds")
 ss <- ss%>%
-  dplyr::filter(method == "fm")
+  dplyr::filter(method == "wn")
 
-#Read and summarise all the single value imputations
-x1.sc21.sing1 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc21_do20_param1.rds")
-x1.sc21.sing2 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc21_do20_param11.rds")
-x1.sc21.sing <- append(x1.sc21.sing1,x1.sc21.sing2)
-remove(x1.sc21.sing1, x1.sc21.sing2)
-
-
-x1.sc19.sing1 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc19_do20_param1.rds")
-x1.sc19.sing2 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc19_do20_param11.rds")
-x1.sc19.sing <- append(x1.sc19.sing1,x1.sc19.sing2)
-remove(x1.sc19.sing1, x1.sc19.sing2)
-
-x1.sc17.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc17_do20_param1.rds")
-x1.sc2.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc2_do20_param1.rds")
-x1.sc4.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc4_do20_param1.rds")
-x1.sc6.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc6_do20_param1.rds")
-x1.sc26.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc26_do20_param1.rds")
-x1.sc25.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc25_do20_param1.rds")
-x1.sc23.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc23_do20_param1.rds")
+x1.sc26.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc26_do20_param1.rds")
+x1.sc25.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc25_do20_param1.rds")
+x1.sc23.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc23_do20_param1.rds")
+x1.sc21.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc21_do20_param1.rds")
+x1.sc17.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc17_do20_param1.rds")
+x1.sc19.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc19_do20_param1.rds")
+x1.sc2.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc2_do20_param1.rds")
+x1.sc4.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc4_do20_param1.rds")
+x1.sc6.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc6_do20_param1.rds")
+x1.sc21.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc21_do20_param1.rds")
 
 
+#additions
+x1.sc27.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc27_do20_param1.rds")
+x1.sc22.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc22_do20_param1.rds")
+x1.sc18.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc18_do20_param1.rds")
+x1.sc16.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc16_do20_param1.rds")
 
 #check p_C, p_T and type1/power for full data
 full.type1<-
@@ -53,9 +49,9 @@ full.type1<-
     full.check(x1.sc25.sing, 25),
     full.check(x1.sc26.sing, 26)
   )%>%
-  dplyr::mutate(method = "fm")
+  dplyr::mutate(method = "wn")
 
-saveRDS(full.type1, "cluster/out/overall/full.type1.fm.rds")
+saveRDS(full.type1, "cluster/out/overall/full.type1.wn.rds")
 
 #check do rates
 do.check<-
@@ -69,9 +65,9 @@ do.check<-
             do.check(x1.sc25.sing),
             do.check(x1.sc26.sing)
   )%>%
-  dplyr::mutate(method = "fm", do = 0.2)
+  dplyr::mutate(method = "wn", do = 0.2)
 
-saveRDS(do.check, "cluster/out/overall/do.check.fm.20.rds")
+saveRDS(do.check, "cluster/out/overall/do.check.wn.20.rds")
 
 h0.sing <-
   bind_rows(
@@ -86,41 +82,66 @@ h0.sing <-
     h0.sing.sum(x1.sc2.sing)
     
   )%>%
-  dplyr::mutate(method = "fm")
+  dplyr::mutate(method = "wn")
 
-saveRDS(h0.sing, "cluster/out/overall/h0.sing.fm.20.rds")
-
-
-#Read and summarise all the MICE imputations
+saveRDS(h0.sing, "cluster/out/overall/h0.sing.wn.20.rds")
 
 
-x1.sc21.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc21_do20_param1.rds")
-x1.sc19.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc19_do20_param1.rds")
-x1.sc17.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc17_do20_param1.rds")
-x1.sc4.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc4_do20_param1.rds")
-x1.sc2.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc2_do20_param1.rds")
-x1.sc6.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc6_do20_param1.rds")
-x1.sc26.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc26_do20_param1.rds")
-x1.sc23.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc23_do20_param1.rds")
-x1.sc25.mice <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_mice_sc25_do20_param1.rds")
+#Read and summarise results for MICE
+x1.sc2.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc2_do20_param1.rds")
+x1.sc4.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc4_do20_param1.rds")
+
+x1.sc6.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc6_do20_param1.rds")
+x1.sc19.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc19_do20_param1.rds")
+x1.sc21.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc21_do20_param1.rds")
+
+
+
+x1.sc17.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc17_do20_param1.rds")
+x1.sc26.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc26_do20_param1.rds")
+x1.sc23.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc23_do20_param1.rds")
+x1.sc25.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc25_do20_param1.rds")
+
+
 
 h0.mice <-
-bind_rows(
-  h0.mice.sum(x1.sc21.mice),
-  h0.mice.sum(x1.sc19.mice),
-  h0.mice.sum(x1.sc17.mice),
-  h0.mice.sum(x1.sc6.mice),
-  h0.mice.sum(x1.sc4.mice),
-  h0.mice.sum(x1.sc2.mice),
-  h0.mice.sum(x1.sc25.mice),
-  h0.mice.sum(x1.sc23.mice),
-  h0.mice.sum(x1.sc26.mice)
+  bind_rows(
+    h0.mice.sum.wn(x1.sc21.mice)%>%
+      dplyr::filter(k.C.spec!="normal(1.35, 0.05)"),
+    h0.mice.sum.wn(x1.sc2.mice),
+    h0.mice.sum.wn(x1.sc4.mice),
+    h0.mice.sum.wn(x1.sc6.mice),
+    h0.mice.sum.wn(x1.sc19.mice),
+    h0.mice.sum.wn(x1.sc17.mice),
+    h0.mice.sum.wn(x1.sc26.mice),
+    h0.mice.sum.wn(x1.sc23.mice),
+    h0.mice.sum.wn(x1.sc25.mice)
+    
+    
+    
+    
+  )%>%
+  dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
 
-)%>%
-  dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
+saveRDS(h0.mice, "cluster/out/overall/h0.mice.wn.20.rds")
 
-saveRDS(h0.mice, "cluster/out/overall/h0.mice.fm.20.rds")
 
+
+
+
+
+
+full.check(x1.sc22.sing, 22)
+do.check(x1.sc22.sing)
+
+h0.sing.sum(x1.sc22.sing)%>%
+  dplyr::filter(strategy=="cca")
+
+
+h0.mice.sum(x1.sc21.mice)
+h0.sing.sum(x1.sc21.bw)
+
+h0.mice.sum(x1.sc17.mice)
 
 h0.sing <- h0.sing%>%
   dplyr::left_join(ss%>%
@@ -185,18 +206,7 @@ h0.sing%>%
 
 
 
-##################
-#### do = 15% ####
 
-x1.sc21.sing.do15 <- readRDS("cluster/out/fm/2xcont/do15/cont2xH0_fm_sing_sc21_do15_param1.rds")
-
-full.check(x1.sc21.sing.do15, 21)
-
-
-
-x1.sc21.mice.do15 <- readRDS("cluster/out/fm/2xcont/do15/cont2xH0_fm_mice_sc21_do15_param1.rds")
-
-h0.mice.sum(x1.sc21.mice.do15)
 
 ss.bounds <- readRDS("cluster/ss.bounds.rds")
 
