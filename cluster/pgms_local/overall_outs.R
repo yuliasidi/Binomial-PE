@@ -6,8 +6,11 @@ source("cluster/pgms/init.R")
 
 ss <- readRDS("cluster/ss.bounds.rds")
 
-full.type1 <- map_df(list.files("cluster/out/overall", "full.type1", full.names = T), readRDS)
+##############################################
+## Type-I error for the fully observed data ##
+##############################################
 
+full.type1 <- map_df(list.files("cluster/out/overall", "full.type1", full.names = T), readRDS)
 
 h0.full.all <-
   full.type1%>%
@@ -30,6 +33,9 @@ h0.full.all
 dev.off()
 
   
+###############################################
+## Type-I error/Bias for the incomplete data ##
+###############################################
 
 h0.sing <- map_df(list.files("cluster/out/overall", "h0.sing", full.names = T), readRDS)
 
@@ -107,58 +113,25 @@ h0.mnar<-
   ungroup()%>%
   dplyr::select(do, scenario.id, method, flabel, missing.desc, mean_pc, mean_pt, 
                 type1, type1.mice, k.C.spec, k.T.spec, mean.bias, bias.mice)
-  
-  ggplot(aes(y=missing.desc,x=type1,colour=method)) + 
-  geom_point() + 
-  facet_wrap(~flabel,ncol=3, nrow = 3) + 
-  geom_vline(xintercept=c(0.9,1.1)*0.025,
-             linetype=2) + 
-  labs(x = "Empirical Type-I error",
-       y = "Drop-out difference (%C-%T)" ,
-       title = "Empirical type-I error: CCA for MAR") +
-  theme_bw() +
-  theme(legend.position = 'bottom')
+ 
 
-pdf("cluster/out/overall/plots/h0_cca_mar.pdf")
-h0.cca.mar
-dev.off()
+wald.mnar1<-
+  h0.mnar%>%
+  dplyr::filter(method=="wald", missing.desc=="p_T_obs > p_T_full")
 
+wald.mnar2<-
+  h0.mnar%>%
+  dplyr::filter(method=="wald", missing.desc!="p_T_obs > p_T_full")
 
-h0.cca.mar<-
-  h0.sing%>%
-  dplyr::filter(strategy=="cca", grepl("mnar",missing)>0)%>%
-  ggplot(aes(y=missing.desc,x=mean.bias,colour=method)) + 
-  geom_point() + 
-  facet_wrap(~flabel,ncol=3, nrow = 3) + 
-  geom_vline(xintercept=c(-0.1,0.1),
-             linetype=2) + 
-  labs(x = "Mean relative bias",
-       y = "Drop-out difference (%C-%T)" ,
-       title = "Mean relative bias: CCA for MNAR") +
-  theme_bw() +
-  theme(legend.position = 'bottom')
-
-
-
-h0.mice <- map_df(list.files("cluster/out/overall", "h0.mice", full.names = T), readRDS)
-
-h0.mice <-
-  h0.mice%>%
-  left_join(ss%>%
-              dplyr::filter(method=="wald")%>%
-              dplyr::select(scenario.id, p_C, M2, n.arm), by = c("scenario.id"))%>%
-  dplyr::mutate(flabel = sprintf('p[C]: %s, Delta: %s, n: %s',p_C, M2, n.arm))
-
-#h0.cca.mar<-
-  h0.mice%>%
-  ggplot(aes(y=missing.desc,x=type1,colour=method)) + 
+h0.mnar%>%
+  ggplot(aes(y=missing.desc,x=type1.mice,colour=method)) + 
   geom_point(aes(shape = method)) + 
   facet_wrap(~flabel,nrow=3, ncol = 3) + 
   geom_vline(xintercept=c(0.9,1.1)*0.025,
              linetype=2) + 
   labs(x = "Empirical Type-I error",
        y = "Drop-out difference (%C-%T)" ,
-       title = "Empirical type-I error: MICE for MNAR") +
+       title = "Empirical type-I error: Nested MICE for MNAR") +
   theme_bw() +
   theme(legend.position = 'bottom')
 

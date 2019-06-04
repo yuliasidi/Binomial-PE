@@ -1,8 +1,6 @@
 library(dplyr)
 library(tidyr)
 library(purrr)
-library(ggplot2)
-library(plotly)
 
 source("cluster/pgms/init.R")
 source("funs/full.check.R")
@@ -122,71 +120,12 @@ bind_rows(
 saveRDS(h0.mice, "cluster/out/overall/h0.mice.fm.20.rds")
 
 
-h0.sing <- h0.sing%>%
-  dplyr::left_join(ss%>%
-                     dplyr::select(scenario.id, p_C, M2, n.arm), by = "scenario.id")
-
-h0.sing$missing.desc <- factor(h0.sing$missing.desc,levels=unique(h0.sing$missing.desc)[c(4,3,2,1,5,6,7,8,9,10)])
-h0.sing <- h0.sing%>%
-  dplyr::mutate(flabel = sprintf('p[C]: %s, Delta: %s, n: %s',p_C, M2, n.arm))%>%
-  left_join(full.type1%>%
-              dplyr::select(scenario.id, reject.h0)%>%
-              dplyr::rename(type1.comp = reject.h0), by = "scenario.id")
-
-#type1.plot.20.mar.ccamice <-
-h0.sing%>%
-  filter(strategy%in%c("cca"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
-  plot.type1(do.val = 0.2, 
-             p.title = "Type-I error: Overall drop-out rate of 20%")
-
-#bias.plot.20.mar.ccamice <-
-h0.sing%>%
-  filter(strategy%in%c("cca"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
-  plot.bias(do.val = 0.2, 
-            p.title = "Bias: Overall drop-out rate of 20%")
-
-
-
-#type1.plot.20.mar.ccamice <-
-h0.sing%>%
-  filter(strategy%in%c("cca"), missing%in%c("mnar1", "mnar2"))%>%
-  plot.type1(do.val = 0.2, 
-             p.title = "Type-I error: Overall drop-out rate of 20%")
-
-#bias.plot.20.mar.ccamice <-
-h0.sing%>%
-  filter(strategy%in%c("cca"), missing%in%c("mnar1", "mnar2"))%>%
-  plot.bias(do.val = 0.2, 
-            p.title = "Bias: Overall drop-out rate of 20%")
-
-
-# h0.sing%>%
-#   filter(strategy%in%c("best"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
-#   plot.type1(do.val = 0.2, 
-#              p.title = "Type-I error: Overall drop-out rate of 20%")
-# 
-# h0.sing%>%
-#   filter(strategy%in%c("best"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
-#   plot.bias(do.val = 0.2, 
-#             p.title = "Bias: Overall drop-out rate of 20%")
-# 
-# 
-# h0.sing%>%
-#   filter(strategy%in%c("worst"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
-#   plot.type1(do.val = 0.2, 
-#              p.title = "Type-I error: Overall drop-out rate of 20%")
-# 
-# h0.sing%>%
-#   filter(strategy%in%c("worst"), missing%in%c("mar1", "mar2", "mar3", "mar4", "mar5", "mar6", "mar7", "mcar"))%>%
-#   plot.bias(do.val = 0.2, 
-#             p.title = "Bias: Overall drop-out rate of 20%")
-
-
 
 
 
 ##################
 #### do = 15% ####
+##################
 
 x1.sc21.sing.do15 <- readRDS("cluster/out/fm/2xcont/do15/cont2xH0_fm_sing_sc21_do15_param1.rds")
 
