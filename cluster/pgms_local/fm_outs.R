@@ -11,6 +11,9 @@ source("funs/plot.type1.R")
 source("funs/plot.bias.R")
 source("funs/plot.power.R")
 source("funs/miss.desc.R")
+source("funs/missing.desc.adj.R")
+source("funs/pcheck.cca.R") 
+
 
 ss <- readRDS("cluster/ss.bounds.rds")
 ss <- ss%>%
@@ -28,65 +31,60 @@ x1.sc19.sing2 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc19_do20_param
 x1.sc19.sing <- append(x1.sc19.sing1,x1.sc19.sing2)
 remove(x1.sc19.sing1, x1.sc19.sing2)
 
-x1.sc17.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc17_do20_param1.rds")
-x1.sc2.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc2_do20_param1.rds")
-x1.sc4.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc4_do20_param1.rds")
-x1.sc6.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc6_do20_param1.rds")
-x1.sc26.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc26_do20_param1.rds")
-x1.sc25.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc25_do20_param1.rds")
-x1.sc23.sing <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc23_do20_param1.rds")
-
-
+ll <- c(seq(1,18,1), 20, seq(22,30,1))  
 
 #check p_C, p_T and type1/power for full data
-full.type1<-
+full.type1 <-
+  map_df(ll, 
+         .f = function(sc) {
+           dt <- readRDS(list.files("cluster/out/fm/2xcont/", paste0("cont2xH0_fm_sing_sc", sc, "_"), full.names = T))
+           full.check(dt, sc)
+         })%>%
   bind_rows(
     full.check(x1.sc21.sing, 21),
-    full.check(x1.sc19.sing, 19),
-    full.check(x1.sc17.sing, 17),
-    full.check(x1.sc6.sing, 6),
-    full.check(x1.sc4.sing, 4),
-    full.check(x1.sc2.sing, 2),
-    full.check(x1.sc23.sing, 23),
-    full.check(x1.sc25.sing, 25),
-    full.check(x1.sc26.sing, 26)
-  )%>%
+    full.check(x1.sc19.sing, 19))%>%
   dplyr::mutate(method = "fm")
+  
+
+full.type1%>%
+  dplyr::mutate(p_C.check = round(C_phat,3) - p_C,
+                M2.check = round(C_phat - T_phat - M2, 3))
 
 saveRDS(full.type1, "cluster/out/overall/full.type1.fm.rds")
 
 #check do rates
-do.check<-
-  bind_rows(do.check(x1.sc21.sing),
-            do.check(x1.sc19.sing),
-            do.check(x1.sc17.sing),
-            do.check(x1.sc6.sing),
-            do.check(x1.sc4.sing),
-            do.check(x1.sc2.sing),
-            do.check(x1.sc23.sing),
-            do.check(x1.sc25.sing),
-            do.check(x1.sc26.sing)
-  )%>%
-  dplyr::mutate(method = "fm", do = 0.2)
+do.check.do20 <-
+  map_df(list.files("cluster/out/fm/2xcont/","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)
+         })%>% bind_rows(do.check(x1.sc21.sing),
+                         do.check(x1.sc19.sing))%>%
+  dplyr::mutate(method = "fm", do = 0.20, hyp = "H0")
 
 saveRDS(do.check, "cluster/out/overall/do.check.fm.20.rds")
 
-h0.sing <-
-  bind_rows(
-    h0.sing.sum(x1.sc26.sing),
-    h0.sing.sum(x1.sc25.sing),
-    h0.sing.sum(x1.sc23.sing),
-    h0.sing.sum(x1.sc21.sing),
-    h0.sing.sum(x1.sc19.sing),
-    h0.sing.sum(x1.sc17.sing),
-    h0.sing.sum(x1.sc6.sing),
-    h0.sing.sum(x1.sc4.sing),
-    h0.sing.sum(x1.sc2.sing)
-    
-  )%>%
+
+h0.sing.do20 <-
+  map_df(list.files("cluster/out/fm/2xcont/","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)
+         })%>%
+  bind_rows( h0.sing.sum(x1.sc21.sing),
+             h0.sing.sum(x1.sc19.sing))%>%
   dplyr::mutate(method = "fm")
 
-saveRDS(h0.sing, "cluster/out/overall/h0.sing.fm.20.rds")
+h0.sing.pcheck.mcar<-
+  pcheck.cca(h0.sing.do20,  miss.type = "mcar")
+
+h0.sing.pcheck.mar<-
+  pcheck.cca(h0.sing.do20,  miss.type = "mar")
+
+h0.sing.pcheck.mnar<-
+  pcheck.cca(h0.sing.do20,  miss.type = "mnar")
+
+saveRDS(h0.sing.do20, "cluster/out/overall/h0.sing.fm.20.rds")
 
 
 #Read and summarise all the MICE imputations
@@ -127,270 +125,217 @@ saveRDS(h0.mice, "cluster/out/overall/h0.mice.fm.20.rds")
 #### do = 15% ####
 ##################
 
-x1.sc21.sing.do15 <- readRDS("cluster/out/fm/2xcont/do15/cont2xH0_fm_sing_sc21_do15_param1.rds")
 
-full.check(x1.sc21.sing.do15, 21)
+ll <- c(2,4,6,17,19,21,23,25,26)
 
+full.type1.do15 <-
+  map_df(ll, 
+         .f = function(sc) {
+           dt <- readRDS(list.files("cluster/out/fm/2xcont/do15/", paste0("cont2xH0_fm_sing_sc", sc, "_"), full.names = T))
+           full.check(dt, sc)
+         })%>%
+  dplyr::mutate(method = "fm")
 
+full.type1 <- readRDS("cluster/out/overall/full.type1.fm.rds")
 
-x1.sc21.mice.do15 <- readRDS("cluster/out/fm/2xcont/do15/cont2xH0_fm_mice_sc21_do15_param1.rds")
+#compare full datasets between simulations for do=20% and do=15%, should be exactly the same
+compare::compare(full.type1%>%arrange(scenario.id)%>%
+                   filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26)),
+                 full.type1.do15%>%arrange(scenario.id))
 
-h0.mice.sum(x1.sc21.mice.do15)
+do.check.do15 <-
+  map_df(list.files("cluster/out/fm/2xcont/do15/","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)%>%missing.desc.adj(do.adj = 15)
+         })%>%
+  dplyr::mutate(method = "fm", do = 0.15, hyp = "H0")
 
-ss.bounds <- readRDS("cluster/ss.bounds.rds")
-
-ss.bounds <- ss.bounds%>%
-  dplyr::filter(method=="wald")
-
-ff.n <- expand.grid(scenario = seq(1,30,2), do = c(10,20), setn = 1)
-
-ff.n1 <- ff.n%>%filter(scenario%in%c(11,13,15,17,19,21))
-
-
-
-t1.H0 <- pmap_df(as.list(ff.n1), .f = function(scenario, do, setn){
-  t <-readRDS(sprintf("cluster/out/wald/outH0_p30_wald%d_%d_set%d.rds", scenario, do, setn))
-  t1 <- t%>%
-    dplyr::bind_rows()%>%
-    dplyr::mutate(setn = setn)
-  return(t1)
-  
-})
+saveRDS(do.check.do15, "cluster/out/overall/do.check.fm.15.rds")
 
 
-t1.H1 <- pmap_df(as.list(ff.n1), .f = function(scenario, do, setn){
-  t <-readRDS(sprintf("cluster/out/wald/outH1_p30_wald%d_%d_set%d.rds", scenario, do, setn))
-  t1 <- t%>%
-    dplyr::bind_rows()%>%
-    dplyr::mutate(setn = setn)
-  return(t1)
-  
-})
+h0.sing.do15 <-
+  map_df(list.files("cluster/out/fm/2xcont/do15/","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)%>%missing.desc.adj(do.adj = 15)
+         })%>%
+  dplyr::mutate(method = "fm")
 
 
-t2.H0 <- t1.H0%>%
-  mutate(bias = round((phat.d-M2)/M2,4))%>%
-  dplyr::group_by(scenario.id, strategy, missing, do)%>%
-  dplyr::summarise(type1=mean(reject.h0), mean.bias = mean(bias))%>%
-  dplyr::mutate(missing.new = case_when(missing=="mar1" ~ "0%",
-                                        missing=="mar2" ~ "-5%",
-                                        missing=="mar3" & do==0.1 ~ "-10%",
-                                        missing=="mar3" & do==0.2 ~ "-15%",
-                                        missing=="mar4" & do==0.1 ~  "5%",
-                                        missing=="mar4" & do==0.2 ~ "-25%",
-                                        missing=="mar5" & do==0.1 ~  "10%",
-                                        missing=="mar5" & do==0.2 ~  "5%",
-                                        missing=="mar6" ~ "15%",
-                                        missing=="mar7" ~ "25%"))%>%
-  dplyr::left_join(ss.bounds%>%
-                     dplyr::select(scenario.id, p_C, M2, n.arm), by = "scenario.id")
+h0.sing.pcheck.mcar<-
+  pcheck.cca(h0.sing.do15,  miss.type = "mcar")
 
-t2.H0$missing.new <- factor(t2.H0$missing.new,levels=unique(t2.H0$missing.new)[c(6,4,3,2,1,5,8,7,9,10)])
-t2.H0$flabel <- sprintf('p[C]: %s, Delta: %s, n:%s',t2.H0$p_C,t2.H0$M2,t2.H0$n.arm)
+h0.sing.pcheck.mar<-
+  pcheck.cca(h0.sing.do15,  miss.type = "mar")
 
-type1.plot.20.mar.ccamice <-
-  t2.H0%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  plot.type1(do.val = 0.2, 
-             p.title = "Type-I error: MAR for overall drop-out rate of 20%")
+h0.sing.pcheck.mnar<-
+  pcheck.cca(h0.sing.do15,  miss.type = "mnar")
 
-type1.plot.20.mar.bw <-
-  t2.H0%>%
-  filter(strategy%in%c("best", "worst"), missing!="mcar")%>%
-  plot.type1(do.val = 0.2, 
-             p.title = "Type-I error: MAR for overall drop-out rate of 20%")
+saveRDS(h0.sing.do15, "cluster/out/overall/h0.sing.fm.15.rds")
 
-# mcar.ccamice <-
-#   t2.H0%>%
-#   filter(strategy%in%c("cca", "mice m=20"), missing=="mcar")
+#### MICE ####
 
-type1.plot.10.mar.ccamice <-
-  t2.H0%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  plot.type1(do.val = 0.1, 
-             p.title = "Type-I error: MAR for overall drop-out rate of 10%")
+h0.mice.do15 <-
+  map_df(list.files("cluster/out/fm/2xcont/do15/", "cont2xH0_fm_mice", full.names = T), 
+         .f = function(file) {
+           df <- readRDS(file)
+           h0.mice.sum(df)
+         })%>%
+  dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
 
-type1.plot.10.mar.bw <-
-  t2.H0%>%
-  filter(strategy%in%c("best", "worst"), missing!="mcar")%>%
-  plot.type1(do.val = 0.1, 
-             p.title = "Type-I error: MAR for overall drop-out rate of 10%")
-
-bias.plot.10.mar.ccamice <-
-  t2.H0%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  plot.bias(do.val = 0.1, 
-            p.title = "Bias: MAR for overall drop-out rate of 10%")
-
-bias.plot.10.mar.bw <-
-  t2.H0%>%
-  filter(strategy%in%c("best", "worst"), missing!="mcar")%>%
-  plot.bias(do.val = 0.1, 
-            p.title = "Bias: MAR for overall drop-out rate of 10%")
-
-bias.plot.20.mar.ccamice <-
-  t2.H0%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  plot.bias(do.val = 0.2, 
-            p.title = "Bias: MAR for overall drop-out rate of 20%")
-
-bias.plot.20.mar.bw <-
-  t2.H0%>%
-  filter(strategy%in%c("best", "worst"), missing!="mcar")%>%
-  plot.bias(do.val = 0.2, 
-            p.title = "Bias: MAR for overall drop-out rate of 20%")
-
-t2.H1 <- t1.H1%>%
-  dplyr::group_by(scenario.id, strategy, missing, do)%>%
-  dplyr::summarise(power=mean(reject.h0))%>%
-  dplyr::mutate(missing.new = case_when(missing=="mar1" ~ "0%",
-                                        missing=="mar2" ~ "-5%",
-                                        missing=="mar3" & do==0.1 ~ "-10%",
-                                        missing=="mar3" & do==0.2 ~ "-15%",
-                                        missing=="mar4" & do==0.1 ~  "5%",
-                                        missing=="mar4" & do==0.2 ~ "-25%",
-                                        missing=="mar5" & do==0.1 ~  "10%",
-                                        missing=="mar5" & do==0.2 ~  "5%",
-                                        missing=="mar6" ~ "15%",
-                                        missing=="mar7" ~ "25%"))%>%
-  dplyr::left_join(ss.bounds%>%
-                     dplyr::select(scenario.id, p_C, M2, n.arm), by = "scenario.id")
-
-t2.H1$missing.new <- factor(t2.H1$missing.new,levels=unique(t2.H1$missing.new)[c(6,4,3,2,1,5,8,7,9,10)])
-t2.H1$flabel <- sprintf('p[C]: %s, Delta: %s, n:%s',t2.H1$p_C,t2.H1$M2,t2.H1$n.arm)
-
-power.plot.20.mar.ccamice <-
-  t2.H1%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  plot.power(do.val = 0.2, 
-             p.title = "Power: MAR for overall drop-out rate of 20%")
-
-power.plot.20.mar.bw <-
-  t2.H1%>%
-  filter(strategy%in%c("best", "worst"), missing!="mcar")%>%
-  plot.power(do.val = 0.2, 
-             p.title = "Power: MAR for overall drop-out rate of 20%")
-
-
-power.plot.10.mar.ccamice <-
-  t2.H1%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  plot.power(do.val = 0.1, 
-             p.title = "Power: MAR for overall drop-out rate of 10%")
-
-power.plot.10.mar.bw <-
-  t2.H1%>%
-  filter(strategy%in%c("best", "worst"), missing!="mcar")%>%
-  plot.power(do.val = 0.1, 
-             p.title = "Power: MAR for overall drop-out rate of 10%")
+saveRDS(h0.mice.do15, "cluster/out/overall/h0.mice.fm.15.rds")
 
 
 
-###########
-# Save
+##################
+#### do = 10% ####
+##################
 
-pdf("cluster/out/wald/plots/type1_mar10_wald_ccamice.pdf")
-type1.plot.10.mar.ccamice
-dev.off()
+x1.sc21.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc21_do10_param1.rds")
+x1.sc19.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc19_do10_param1.rds")
+x1.sc17.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc17_do10_param1.rds")
+x1.sc2.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc2_do10_param1.rds")
+x1.sc4.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc4_do10_param1.rds")
+x1.sc6.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc6_do10_param1.rds")
+x1.sc23.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc23_do10_param1.rds")
+x1.sc25.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc25_do10_param1.rds")
+x1.sc26.sing.do10 <- readRDS("cluster/out/fm/2xcont/do10/cont2xH0_fm_sing_sc26_do10_param1.rds")
 
-pdf("cluster/out/wald/plots/type1_mar10_wald_bw.pdf")
-type1.plot.10.mar.bw
-dev.off()
+full.type1.do10 <- 
+  bind_rows(
+    full.check(x1.sc21.sing.do10, 21),
+    full.check(x1.sc19.sing.do10, 19),
+    full.check(x1.sc17.sing.do10, 17),
+    full.check(x1.sc2.sing.do10, 2),
+    full.check(x1.sc4.sing.do10, 4),
+    full.check(x1.sc6.sing.do10, 6),
+    full.check(x1.sc23.sing.do10, 23),
+    full.check(x1.sc25.sing.do10, 25),
+    full.check(x1.sc26.sing.do10, 26)
+  )%>%
+  dplyr::mutate(method = "fm")
 
-pdf("cluster/out/wald/plots/type1_mar20_wald_ccamice.pdf")
-type1.plot.20.mar.ccamice
-dev.off()
+full.type1 <- readRDS("cluster/out/overall/full.type1.fm.rds")
 
-pdf("cluster/out/wald/plots/type1_mar20_wald_bw.pdf")
-type1.plot.20.mar.bw
-dev.off()
+#compare full datasets between simulations for do=20% and do=15%, should be exactly the same
+compare::compare(full.type1%>%arrange(scenario.id)%>%
+                   filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26)),
+                 full.type1.do10%>%arrange(scenario.id))
 
-##### Bias
+do.check.do10 <-
+  bind_rows(
+    do.check(x1.sc21.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc19.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc17.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc2.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc4.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc6.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc23.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc25.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    do.check(x1.sc26.sing.do10)%>%missing.desc.adj(do.adj = 10)
+  )%>%
+  dplyr::mutate(method = "fm", do = 0.10, hyp = "H0")
 
-pdf("cluster/out/wald/plots/bias_mar10_wald_ccamice.pdf")
-bias.plot.10.mar.ccamice
-dev.off()
+saveRDS(do.check.do10, "cluster/out/overall/do.check.fm.10.rds")
 
-pdf("cluster/out/wald/plots/bias_mar10_wald_bw.pdf")
-bias.plot.10.mar.bw
-dev.off()
-
-pdf("cluster/out/wald/plots/bias_mar20_wald_ccamice.pdf")
-bias.plot.20.mar.ccamice
-dev.off()
-
-pdf("cluster/out/wald/plots/bias_mar20_wald_bw.pdf")
-bias.plot.20.mar.bw
-dev.off()
-
-
-##### Power
-
-pdf("cluster/out/wald/plots/power_mar10_wald_ccamice.pdf")
-power.plot.10.mar.ccamice
-dev.off()
-
-pdf("cluster/out/wald/plots/power_mar10_wald_bw.pdf")
-power.plot.10.mar.bw
-dev.off()
-
-pdf("cluster/out/wald/plots/power_mar20_wald_ccamice.pdf")
-power.plot.20.mar.ccamice
-dev.off()
-
-pdf("cluster/out/wald/plots/power_mar20_wald_bw.pdf")
-power.plot.20.mar.bw
-dev.off()
-
-######################
-t2.H0%>%
-  filter(type1<=1.1*0.025, type1>0.9*0.025, missing!="mcar")%>%
-  group_by(strategy, do)%>%
-  summarise(n())
+#h0.sing.sum(x1.sc4.sing.do10)%>%missing.desc.adj(do.adj = 10)%>%filter(strategy=="cca")
 
 
-ff.n <- expand.grid(scenario = seq(1,30,2), do = c(20), setn = 1, rvv = c("p","m"))
+h0.sing.do10 <-
+  bind_rows(
+    h0.sing.sum(x1.sc21.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc19.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc17.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc2.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc4.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc6.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc23.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc25.sing.do10)%>%missing.desc.adj(do.adj = 10),
+    h0.sing.sum(x1.sc26.sing.do10)%>%missing.desc.adj(do.adj = 10)
+  )%>%
+  dplyr::mutate(method = "fm")
 
-ff.n1 <- ff.n%>%filter(scenario%in%c(21))
-
-k<-readRDS("cluster/out/wald/outH0_p30_wald21_20_set1.rds")
-k1<-readRDS("cluster/out/wald/outH0_m30_wald21_20_set1.rds")
-
-t1.H0 <- bind_rows(bind_rows(k)%>%
-                     mutate(rho = 0.3), 
-                   bind_rows(k1)%>%
-                     mutate(rho = -0.3))
+saveRDS(h0.sing.do10, "cluster/out/overall/h0.sing.fm.10.rds")
 
 
-t2.H0 <- t1.H0%>%
-  mutate(bias = round((phat.d-M2)/M2,4))%>%
-  dplyr::group_by(scenario.id, strategy, missing, do, rho)%>%
-  dplyr::summarise(type1=mean(reject.h0), mean.bias = mean(bias))%>%
-  dplyr::mutate(missing.new = case_when(missing=="mar1" ~ "0%",
-                                        missing=="mar2" ~ "-5%",
-                                        missing=="mar3" & do==0.1 ~ "-10%",
-                                        missing=="mar3" & do==0.2 ~ "-15%",
-                                        missing=="mar4" & do==0.1 ~  "5%",
-                                        missing=="mar4" & do==0.2 ~ "-25%",
-                                        missing=="mar5" & do==0.1 ~  "10%",
-                                        missing=="mar5" & do==0.2 ~  "5%",
-                                        missing=="mar6" ~ "15%",
-                                        missing=="mar7" ~ "25%"))%>%
-  dplyr::left_join(ss.bounds%>%
-                     dplyr::select(scenario.id, p_C, M2, n.arm), by = "scenario.id")
+### MICE ###
+h0.mice.do10 <-
+  map_df(list.files("cluster/out/fm/2xcont/do10/", "cont2xH0_fm_mice", full.names = T), 
+         .f = function(file) {
+           df <- readRDS(file)
+           h0.mice.sum(df)
+         })%>%
+  dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
 
-t2.H0$missing.new <- factor(t2.H0$missing.new,levels=unique(t2.H0$missing.new)[c(6,4,3,2,1,5,8,7,9,10)])
-t2.H0$flabel <- sprintf('p[C]: %s, Delta: %s, n:%s',t2.H0$p_C,t2.H0$M2,t2.H0$n.arm)
+saveRDS(h0.mice.do10, "cluster/out/overall/h0.mice.fm.10.rds")
 
-t2.H0%>%
-  filter(strategy%in%c("cca", "mice m=20"), missing!="mcar")%>%
-  ggplot(aes(y=missing.new,x=type1,colour=strategy)) + 
-  geom_point() + 
-  facet_wrap(~rho,ncol=2) + 
-  geom_vline(xintercept=c(0.9,1.1)*0.025,
-             linetype=2) + 
-  labs(x = "Empirical Type-I error",
-       y = "Drop-out difference (%C-%T)" ,
-       title = "p.title") +
-  theme_bw() +
-  theme(legend.position = 'bottom')
+
+##################
+#### do = 5% ####
+##################
+
+
+ll <- c(2,4,6,17,19,21,23,25,26)
+
+full.type1.do5 <-
+  map_df(ll, 
+         .f = function(sc) {
+           dt <- readRDS(list.files("cluster/out/fm/2xcont/do5/", paste0("cont2xH0_fm_sing_sc", sc, "_"), full.names = T))
+           full.check(dt, sc)
+         })%>%
+  dplyr::mutate(method = "fm")
+
+full.type1 <- readRDS("cluster/out/overall/full.type1.fm.rds")
+
+#compare full datasets between simulations for do=20% and do=15%, should be exactly the same
+compare::compare(full.type1%>%arrange(scenario.id)%>%
+                   filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26)),
+                 full.type1.do5%>%arrange(scenario.id))
+
+do.check.do5 <-
+  map_df(list.files("cluster/out/fm/2xcont/do5/","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)
+         })%>%
+  dplyr::mutate(method = "fm", do = 0.05, hyp = "H0")
+
+saveRDS(do.check.do5, "cluster/out/overall/do.check.fm.5.rds")
+
+
+h0.sing.do5 <-
+  map_df(list.files("cluster/out/fm/2xcont/do5/","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)
+         })%>%
+  dplyr::mutate(method = "fm")
+
+h0.sing.do5<-
+  h0.sing.do5%>%
+  dplyr::mutate(missing.desc = ifelse(is.na(missing.desc)==T, "  0%", missing.desc))
+
+h0.sing.pcheck.mcar<-
+  pcheck.cca(h0.sing.do5,  miss.type = "mcar")
+
+h0.sing.pcheck.mar<-
+  pcheck.cca(h0.sing.do5,  miss.type = "mar")
+
+h0.sing.pcheck.mnar<-
+  pcheck.cca(h0.sing.do5,  miss.type = "mnar")
+
+saveRDS(h0.sing.do5, "cluster/out/overall/h0.sing.fm.5.rds")
+
+
+### MICE ###
+h0.mice.do5 <-
+  map_df(list.files("cluster/out/fm/2xcont/do5/", "cont2xH0_fm_mice", full.names = T), 
+         .f = function(file) {
+           df <- readRDS(file)
+           h0.mice.sum(df)
+         })%>%
+  dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
+
+saveRDS(h0.mice.do5, "cluster/out/overall/h0.mice.fm.5.rds")
+

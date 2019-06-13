@@ -12,91 +12,57 @@ source("funs/plot.bias.R")
 source("funs/plot.power.R")
 source("funs/miss.desc.R")
 source("funs/missing.desc.adj.R")
+source("funs/pcheck.cca.R") 
 
 ss <- readRDS("cluster/ss.bounds.rds")
 ss <- ss%>%
   dplyr::filter(method == "wn")
 
-x1.sc26.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc26_do20_param1.rds")
-x1.sc25.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc25_do20_param1.rds")
-x1.sc23.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc23_do20_param1.rds")
-x1.sc21.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc21_do20_param1.rds")
-x1.sc17.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc17_do20_param1.rds")
-x1.sc19.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc19_do20_param1.rds")
-x1.sc2.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc2_do20_param1.rds")
-x1.sc4.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc4_do20_param1.rds")
-x1.sc6.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc6_do20_param1.rds")
-x1.sc21.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc21_do20_param1.rds")
-
-
-#additions
-x1.sc27.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc27_do20_param1.rds")
-x1.sc22.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc22_do20_param1.rds")
-x1.sc18.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc18_do20_param1.rds")
-x1.sc16.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc16_do20_param1.rds")
-x1.sc15.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc15_do20_param1.rds")
-x1.sc14.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc14_do20_param1.rds")
-x1.sc13.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc13_do20_param1.rds")
-x1.sc12.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc12_do20_param1.rds")
-x1.sc11.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc11_do20_param1.rds")
-x1.sc1.sing <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_sing_sc1_do20_param1.rds")
-
-full.check(x1.sc15.sing, 15)
-full.check(x1.sc14.sing, 14)
-full.check(x1.sc13.sing, 13)
-full.check(x1.sc12.sing, 12)
-full.check(x1.sc11.sing, 11)
-full.check(x1.sc1.sing, 1)
-
 #check p_C, p_T and type1/power for full data
-full.type1<-
-  bind_rows(
-    full.check(x1.sc21.sing, 21),
-    full.check(x1.sc19.sing, 19),
-    full.check(x1.sc17.sing, 17),
-    full.check(x1.sc6.sing, 6),
-    full.check(x1.sc4.sing, 4),
-    full.check(x1.sc2.sing, 2),
-    full.check(x1.sc23.sing, 23),
-    full.check(x1.sc25.sing, 25),
-    full.check(x1.sc26.sing, 26)
-  )%>%
+ll <- seq(1,30,1)
+
+full.type1 <-
+  map_df(ll, 
+         .f = function(sc) {
+           dt <- readRDS(list.files("cluster/out/wn/2xcont/", paste0("cont2xH0_wn_sing_sc", sc, "_"), full.names = T))
+           full.check(dt, sc)
+         })%>%
   dplyr::mutate(method = "wn")
+
+full.type1%>%
+  dplyr::mutate(p_C.check = round(C_phat,3) - p_C,
+                M2.check = round(C_phat - T_phat - M2, 3))
 
 saveRDS(full.type1, "cluster/out/overall/full.type1.wn.rds")
 
 #check do rates
-do.check<-
-  bind_rows(do.check(x1.sc21.sing),
-            do.check(x1.sc19.sing),
-            do.check(x1.sc17.sing),
-            do.check(x1.sc6.sing),
-            do.check(x1.sc4.sing),
-            do.check(x1.sc2.sing),
-            do.check(x1.sc23.sing),
-            do.check(x1.sc25.sing),
-            do.check(x1.sc26.sing)
-  )%>%
-  dplyr::mutate(method = "wn", do = 0.2)
+do.check.do20 <-
+  map_df(list.files("cluster/out/wn/2xcont/","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)
+         })%>%
+  dplyr::mutate(method = "wn", do = 0.20, hyp = "H0")
 
-saveRDS(do.check, "cluster/out/overall/do.check.wn.20.rds")
 
-h0.sing <-
-  bind_rows(
-    h0.sing.sum(x1.sc26.sing),
-    h0.sing.sum(x1.sc25.sing),
-    h0.sing.sum(x1.sc23.sing),
-    h0.sing.sum(x1.sc21.sing),
-    h0.sing.sum(x1.sc19.sing),
-    h0.sing.sum(x1.sc17.sing),
-    h0.sing.sum(x1.sc6.sing),
-    h0.sing.sum(x1.sc4.sing),
-    h0.sing.sum(x1.sc2.sing)
-    
-  )%>%
+saveRDS(do.check.do20, "cluster/out/overall/do.check.wn.20.rds")
+
+#type-I error follow single value imputation
+h0.sing.do20 <-
+  map_df(list.files("cluster/out/wn/2xcont/","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)
+         })%>%
   dplyr::mutate(method = "wn")
 
-saveRDS(h0.sing, "cluster/out/overall/h0.sing.wn.20.rds")
+h0.sing.pcheck.mar<-
+  pcheck.cca(h0.sing.do20,  miss.type = "mar")
+  
+h0.sing.pcheck.mnar<-
+  pcheck.cca(h0.sing.do20,  miss.type = "mnar")
+
+saveRDS(h0.sing.do20, "cluster/out/overall/h0.sing.wn.20.rds")
 
 
 #Read and summarise results for MICE
@@ -145,12 +111,12 @@ saveRDS(h0.mice, "cluster/out/overall/h0.mice.wn.20.rds")
 x1.sc21.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc21_do15_param1.rds")
 x1.sc19.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc19_do15_param1.rds")
 x1.sc17.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc17_do15_param1.rds")
-x1.sc2.sing.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_sing_sc2_do15_param1.rds")
-x1.sc4.sing.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_sing_sc4_do15_param1.rds")
-x1.sc6.sing.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_sing_sc6_do15_param1.rds")
-x1.sc23.sing.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_sing_sc23_do15_param1.rds")
-x1.sc25.sing.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_sing_sc25_do15_param1.rds")
-x1.sc26.sing.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_sing_sc26_do15_param1.rds")
+x1.sc2.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc2_do15_param1.rds")
+x1.sc4.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc4_do15_param1.rds")
+x1.sc6.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc6_do15_param1.rds")
+x1.sc23.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc23_do15_param1.rds")
+x1.sc25.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc25_do15_param1.rds")
+x1.sc26.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc26_do15_param1.rds")
 
 full.type1.do15 <- 
   bind_rows(
@@ -164,9 +130,9 @@ full.type1.do15 <-
     full.check(x1.sc25.sing.do15, 25),
     full.check(x1.sc26.sing.do15, 26)
   )%>%
-  dplyr::mutate(method = "wald")
+  dplyr::mutate(method = "wn")
 
-full.type1 <- readRDS("cluster/out/overall/full.type1.wald.rds")
+full.type1 <- readRDS("cluster/out/overall/full.type1.wn.rds")
 
 #compare full datasets between simulations for do=20% and do=15%, should be exactly the same
 compare::compare(full.type1%>%arrange(scenario.id), full.type1.do15%>%arrange(scenario.id))
@@ -183,11 +149,10 @@ do.check.do15 <-
     do.check(x1.sc25.sing.do15)%>%missing.desc.adj(do.adj = 15),
     do.check(x1.sc26.sing.do15)%>%missing.desc.adj(do.adj = 15)
   )%>%
-  dplyr::mutate(method = "wald", do = 0.15, hyp = "H0")
+  dplyr::mutate(method = "wn", do = 0.15, hyp = "H0")
 
-saveRDS(do.check.do15, "cluster/out/overall/do.check.wald.15.rds")
+saveRDS(do.check.do15, "cluster/out/overall/do.check.wn.15.rds")
 
-h0.sing.sum(x1.sc17.sing.do15)%>%missing.desc.adj(do.adj = 15)%>%filter(strategy=="cca")
 
 h0.sing.do15 <-
   bind_rows(
@@ -201,31 +166,146 @@ h0.sing.do15 <-
     h0.sing.sum(x1.sc25.sing.do15)%>%missing.desc.adj(do.adj = 15),
     h0.sing.sum(x1.sc26.sing.do15)%>%missing.desc.adj(do.adj = 15)
   )%>%
-  dplyr::mutate(method = "wald")
+  dplyr::mutate(method = "wn")
 
-saveRDS(h0.sing.do15, "cluster/out/overall/h0.sing.wald.15.rds")
+saveRDS(h0.sing.do15, "cluster/out/overall/h0.sing.wn.15.rds")
 
 
 ### MICE ###
 
-x1.sc21.mice.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_mice_sc21_do15_param1.rds")
-x1.sc19.mice.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_mice_sc19_do15_param1.rds")
-x1.sc17.mice.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_mice_sc17_do15_param1.rds")
-x1.sc2.mice.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_mice_sc2_do15_param1.rds")
-x1.sc4.mice.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_mice_sc4_do15_param1.rds")
-x1.sc6.mice.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_mice_sc6_do15_param1.rds")
-x1.sc23.mice.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_mice_sc23_do15_param1.rds")
-x1.sc26.mice.do15 <- readRDS("cluster/out/wald/2xcont/do15/cont2xH0_wald_mice_sc26_do15_param11.rds")
+h0.mice.do15 <-
+  map_df(list.files("cluster/out/wn/2xcont/do15/", "cont2xH0_wn_mice", full.names = T), 
+         .f = function(file) {
+           df <- readRDS(file)
+           h0.mice.sum.wn(df)
+         })%>%
+  dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
+
+saveRDS(h0.mice.do15, "cluster/out/overall/h0.mice.wn.15.rds")
 
 
-h0.mice.sum.wn(x1.sc21.mice.do15)
-h0.mice.sum.wn(x1.sc19.mice.do15)
-h0.mice.sum.wn(x1.sc17.mice.do15)
-h0.mice.sum.wn(x1.sc2.mice.do15)
-h0.mice.sum.wn(x1.sc4.mice.do15)
-h0.mice.sum(x1.sc6.mice.do15)
-h0.mice.sum(x1.sc23.mice.do15)
-h0.mice.sum(x1.sc26.mice.do15)
+##################
+#### do = 10% ####
+##################
+
+ll <- c(2,4,6,17,19,21,23,25,26)
+
+full.type1.do10 <-
+  map_df(ll, 
+         .f = function(sc) {
+           dt <- readRDS(list.files("cluster/out/wn/2xcont/do10/", paste0("cont2xH0_wn_sing_sc", sc, "_"), full.names = T))
+           full.check(dt, sc)
+         })%>%
+  dplyr::mutate(method = "wn")
+
+full.type1 <- readRDS("cluster/out/overall/full.type1.wn.rds")
+
+#compare full datasets between simulations for do=20% and do=15%, should be exactly the same
+compare::compare(full.type1%>%arrange(scenario.id)%>%
+                   filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26)),
+                 full.type1.do10%>%arrange(scenario.id))
+
+do.check.do10 <-
+  map_df(list.files("cluster/out/wn/2xcont/do10/","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)%>%missing.desc.adj(do.adj = 10)
+         })%>%
+  dplyr::mutate(method = "wn", do = 0.10, hyp = "H0")
+
+saveRDS(do.check.do10, "cluster/out/overall/do.check.wn.10.rds")
+
+h0.sing.sum(x1.sc26.sing.do10)%>%missing.desc.adj(do.adj = 10)%>%filter(strategy=="cca")
+
+h0.sing.do10 <-
+  map_df(list.files("cluster/out/wn/2xcont/do10/","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)%>%missing.desc.adj(do.adj = 10)
+         })%>%
+  dplyr::mutate(method = "wn")
 
 
+saveRDS(h0.sing.do10, "cluster/out/overall/h0.sing.wn.10.rds")
 
+
+### MICE ###
+
+h0.mice.do10 <-
+  map_df(list.files("cluster/out/wn/2xcont/do10/", "cont2xH0_wn_mice", full.names = T), 
+         .f = function(file) {
+           df <- readRDS(file)
+           h0.mice.sum.wn(df)
+         })%>%
+  dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
+
+saveRDS(h0.mice.do10, "cluster/out/overall/h0.mice.wn.10.rds")
+
+##################
+#### do = 5% ####
+##################
+
+ll <- c(2,4,6,17,19,21,23,25,26)
+
+full.type1.do5 <-
+  map_df(ll, 
+         .f = function(sc) {
+           dt <- readRDS(list.files("cluster/out/wn/2xcont/do5/", paste0("cont2xH0_wn_sing_sc", sc, "_"), full.names = T))
+           full.check(dt, sc)
+         })%>%
+  dplyr::mutate(method = "wn")
+
+full.type1 <- readRDS("cluster/out/overall/full.type1.wn.rds")
+
+#compare full datasets between simulations for do=20% and do=15%, should be exactly the same
+compare::compare(full.type1%>%arrange(scenario.id)%>%
+                   filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26)),
+                 full.type1.do5%>%arrange(scenario.id))
+
+do.check.do5 <-
+  map_df(list.files("cluster/out/wn/2xcont/do5/","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)
+         })%>%
+  dplyr::mutate(method = "wn", do = 0.05, hyp = "H0")
+
+saveRDS(do.check.do5, "cluster/out/overall/do.check.wn.5.rds")
+
+#h0.sing.sum(x1.sc26.sing.do10)%>%missing.desc.adj(do.adj = 10)%>%filter(strategy=="cca")
+
+h0.sing.do5 <-
+  map_df(list.files("cluster/out/wn/2xcont/do5/","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)
+         })%>%
+  dplyr::mutate(method = "wn")
+
+h0.sing.do5<-
+  h0.sing.do5%>%
+  dplyr::mutate(missing.desc = ifelse(is.na(missing.desc)==T, "  0%", missing.desc))
+
+h0.sing.pcheck.mcar<-
+  pcheck.cca(h0.sing.do5,  miss.type = "mcar")
+
+h0.sing.pcheck.mar<-
+  pcheck.cca(h0.sing.do5,  miss.type = "mar")
+
+h0.sing.pcheck.mnar<-
+  pcheck.cca(h0.sing.do5,  miss.type = "mnar")
+
+saveRDS(h0.sing.do5, "cluster/out/overall/h0.sing.wn.5.rds")
+
+
+### MICE ###
+
+h0.mice.do5 <-
+  map_df(list.files("cluster/out/wn/2xcont/do5/", "cont2xH0_wn_mice", full.names = T), 
+         .f = function(file) {
+           df <- readRDS(file)
+           h0.mice.sum.wn(df)
+         })%>%
+  dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
+
+saveRDS(h0.mice.do5, "cluster/out/overall/h0.mice.wn.5.rds")

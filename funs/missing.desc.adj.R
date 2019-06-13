@@ -6,4 +6,10 @@ missing.desc.adj <- function(df, do.adj = 15){
                                              TRUE ~ as.character(missing.desc)))  
   }
   
+  else if (do.adj==10){
+    df%>%
+      dplyr::mutate(missing.desc = case_when(missing=="mar3" ~ "  5%",
+                                             TRUE ~ as.character(missing.desc)))  
+  }
+  
 }

@@ -1,0 +1,94 @@
+#!/home/statsadmin/R/bin/Rscript
+
+args <- commandArgs()
+idx <- as.numeric(args[length(args)])+1
+.libPaths('ysidi/lib')
+
+library(tidyr, warn.conflicts = F, quietly = T)
+library(dplyr, warn.conflicts = F, quietly = T)
+library(purrr, warn.conflicts = F, quietly = T)
+library(reshape2, warn.conflicts = F, quietly = T)
+library(mice, warn.conflicts = F, quietly = T)
+library(MASS, warn.conflicts = F, quietly = T)
+  
+
+source("init.R")
+source("dt.sim.x2.cont.R")
+source("miss.impose.x2.cont.R")
+source("FM.CI.R")
+source("p.rmle.fm.R")
+source("anal.miss.run.R")
+source("mice.nonign.run.R")
+source("mice.impute.logreg.p.R")
+source("nested.mi.comb.R")
+source("miss.param.assign.x2.cont.R")
+
+
+ss.bounds <- readRDS("ss.bounds.rds")
+
+method <- 'fm'
+scenario <- 6
+param <- 1
+anal.type <- "mice"
+
+ss <- ss.bounds%>%
+  dplyr::filter(method == "fm", scenario.id == scenario)
+
+do.val <- 0.15
+
+system.time({
+  
+  
+   set.seed(10000*scenario + idx)                                                   
+   #generate full data with desired correlation structure
+   dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
+                         mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = -0.3, b1 = 0.1, b2 = -0.01)
+   ci.full <- dt0%>%FM.CI(ss$M2,'y')
+   
+   #define missingness parameters and do rates
+   m.param <- miss.param.assign.x2.cont(do = do.val, anal.type = anal.type) 
+                           
+   #impose missing values and perform analysis
+  ci.miss.mnar1 <- m.param%>%
+    slice(1)%>%
+    dplyr::mutate(results = purrr::pmap(list(b.trt=bt, b.Y=by, b.X1=bx1, b.X2=bx2, b.ty = b.ty),
+    anal.miss.run, df = dt0, do = do.val,
+    ci.method = FM.CI,
+    sing.anal = F,
+    mice.anal = T,
+    M2 = ss$M2, seed = 10000*scenario + idx,
+    seed.mice = 10000*scenario + idx,
+    mu.T = 0.82, sd.T = 0.05))%>%
+    dplyr::select(missing, results)
+
+  ci.miss.mnar2 <- m.param%>%
+    slice(2)%>%
+    dplyr::mutate(results = purrr::pmap(list(b.trt=bt, b.Y=by, b.X1=bx1, b.X2=bx2, b.ty = b.ty),
+    anal.miss.run, df = dt0, do = do.val,
+    ci.method = FM.CI,
+    sing.anal = F,
+    mice.anal = T,
+    M2 = ss$M2, seed = 10000*scenario + idx,
+    seed.mice = 10000*scenario + idx,
+    mu.C = 1.25, sd.C = 0.05))%>%
+    dplyr::select(missing, results)
+    
+  ci.miss <- bind_rows(ci.miss.mnar1, ci.miss.mnar2)%>%
+    dplyr::mutate(scenario.id = ss$scenario.id,
+    p_C = ss$p_C,
+    M2 = ss$M2,
+    type = 't.H0',
+    do = do.val,
+    sim.id = idx)
+
+   ci.all <- list(ci.full, ci.miss)%>%purrr::set_names(c("ci.full","ci.miss")) 
+
+})
+
+saveRDS(ci.all, sprintf("cont2xH0_%s_%s_sc%d_do%d_param%d_%d.rds", 
+                    method, anal.type, scenario, round(100*do.val,0), param, idx))
+
+
+
+
+

@@ -33,7 +33,7 @@ system.time({
    
    
    
-   set.seed(100000*scenario + x)                                                   
+   set.seed(10000*scenario + x)                                                   
    #generate full data with desired correlation structure
    dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
                          mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = -0.3, b1 = 0.1, b2 = -0.01)
@@ -71,7 +71,7 @@ system.time({
                              
                              
                              
-                             set.seed(100000*scenario + x)                                                   
+                             set.seed(10000*scenario + x)                                                   
                              #generate full data with desired correlation structure
                              dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
                                                    mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = -0.3, b1 = 0.1, b2 = -0.01)
@@ -116,4 +116,3 @@ check.num.sim <-
                                         mutate(num.sim = '100k'))
 saveRDS(check.num.sim, "cluster/checks/check_num_sim.rds")
 
-xtable::xtable(check.num.sim)
