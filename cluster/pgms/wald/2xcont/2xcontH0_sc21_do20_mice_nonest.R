@@ -2,18 +2,17 @@ source("init.R")
 source("funs/dt.sim.x2.cont.R")
 source("funs/miss.impose.x2.cont.R")
 source("funs/wald.ci.R")
-source("funs/anal.miss.run.R")
-source("funs/mice.nonign.run.R")
-source("funs/mice.impute.logreg.p.R")
-source("funs/nested.mi.comb.R")
+source("funs/mice.run.perarm.R")
+source("funs/mi.comb.R")
 source("funs/miss.param.assign.x2.cont.R")
+source("funs/anal.miss.nonest.R")
 
 library(dplyr)
 
 ss.bounds <- readRDS("ss.bounds.rds")
 
 method <- 'wald'
-scenario <- 3
+scenario <- 21
 param <- 1
 anal.type <- "mice"
 
@@ -21,6 +20,8 @@ ss <- ss.bounds%>%
   dplyr::filter(method == "wald", scenario.id == scenario)
 
 do.val <- 0.2
+
+num.n.mi.nonest <<-20
 
 library(parallel)
 cl <- makeCluster(Sys.getenv()["SLURM_NTASKS"], type = "MPI")
@@ -54,38 +55,20 @@ system.time({
    m.param <- miss.param.assign.x2.cont(do = do.val, anal.type = anal.type) 
                            
    #impose missing values and perform analysis
-  ci.miss.mnar1 <- m.param%>%
-    slice(1)%>%
+   ci.miss <- m.param%>%
     dplyr::mutate(results = purrr::pmap(list(b.trt=bt, b.Y=by, b.X1=bx1, b.X2=bx2, b.ty = b.ty),
-    anal.miss.run, df = dt0, do = do.val,
+    anal.miss.nonest, df = dt0, do = do.val,
     ci.method = wald.ci,
-    sing.anal = F,
-    mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
-    seed.mice = 10000*scenario + x,
-    mu.T = 0.72, sd.T = 0.05))%>%
-    dplyr::select(missing, results)
-
-  ci.miss.mnar2 <- m.param%>%
-    slice(2)%>%
-    dplyr::mutate(results = purrr::pmap(list(b.trt=bt, b.Y=by, b.X1=bx1, b.X2=bx2, b.ty = b.ty),
-    anal.miss.run, df = dt0, do = do.val,
-    ci.method = wald.ci,
-    sing.anal = F,
-    mice.anal = T,
-    M2 = ss$M2, seed = 10000*scenario + x,
-    seed.mice = 10000*scenario + x,
-    mu.C = 1.55, sd.C = 0.05))%>%
-    dplyr::select(missing, results)
-    
-  ci.miss <- bind_rows(ci.miss.mnar1, ci.miss.mnar2)%>%
+    seed.mice = 10000*scenario + x))%>%
+    dplyr::select(missing, results)%>%
     dplyr::mutate(scenario.id = ss$scenario.id,
-    p_C = ss$p_C,
-    M2 = ss$M2,
-    type = 't.H0',
-    do = do.val,
-    sim.id = x)
-
+                  p_C = ss$p_C,
+                  M2 = ss$M2,
+                  type = 't.H0',
+                  do = do.val,
+                  sim.id = x)
+   
    ci.all <- list(ci.full, ci.miss)%>%purrr::set_names(c("ci.full","ci.miss")) 
    return(ci.all)
  })

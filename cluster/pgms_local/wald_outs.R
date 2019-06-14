@@ -294,8 +294,12 @@ x1.sc23.mice <- append(append(x1.sc23.mice1,x1.sc23.mice2),append(x1.sc23.mice1.
 
 x1.sc25.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc25_do20_param1.rds")
 
-x1.sc1.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc1_do20_param1.rds")
-h0.mice.sum(x1.sc1.mice)
+x1.sc22.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc22_do20_param1.rds")
+h0.mice.sum(x1.sc22.mice)
+
+x1.sc3.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc3_do20_param1.rds")
+h0.mice.sum(x1.sc3.mice)
+
 
 h0.mice <-
   bind_rows(
@@ -578,14 +582,23 @@ x1.sc25.mice.do5.local <- readRDS("cluster/out/wald/2xcont/do5/cont2xH0_wald_mic
 x1.sc25.mice.do5 <- append(x1.sc25.mice.do5.condor, x1.sc25.mice.do5.local)
 remove(x1.sc25.mice.do5.condor, x1.sc25.mice.do5.local)
 
+
+x1.sc26.mice.do5.condor <- readRDS("cluster/out/wald/2xcont/do5/cont2xH0_wald_mice_sc26_do5_param1.rds")
+x1.sc26.mice.do5.local <- readRDS("cluster/out/wald/2xcont/do5/cont2xH0_wald_mice_sc26_do5_param11_local.rds")
+x1.sc26.mice.do5 <- append(x1.sc26.mice.do5.condor, x1.sc26.mice.do5.local)
+remove(x1.sc26.mice.do5.condor, x1.sc26.mice.do5.local)
+
+ll <- c(2,4,6,17,19,21,23)
+
 h0.mice.do5 <-
-  map_df(list.files("cluster/out/wald/2xcont/do5/", "cont2xH0_wald_mice", full.names = T), 
-         .f = function(file) {
-           df <- readRDS(file)
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/do5/", paste0("cont2xH0_wald_mice_sc", sc, "_"), full.names = T))
            h0.mice.sum(df)
          })%>%
   bind_rows(
-    h0.mice.sum(x1.sc25.mice.do5)
+    h0.mice.sum(x1.sc25.mice.do5),
+    h0.mice.sum(x1.sc26.mice.do5)
     )
   dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
 
@@ -667,5 +680,26 @@ pdf("cluster/out/overall/plots/diffk_mnar2_wald_sc21_do20.pdf")
 diffk.mnar2.wald.sc21.do20
 dev.off()
 
+#########################################
+# MICE without nesting for scenario 21 ##
+#########################################
 
+x1.sc21.mice.nonest <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc21_do20_nonest.rds")
 
+x1.nonest.ex <-
+  x1.sc21.mice.nonest%>%
+    purrr::map_df(.f=function(x) x$ci.miss,.id = 'sim')%>%
+    unnest()%>%
+    unnest()%>%
+  mutate(bias = round((qbar-M2)/M2,4))%>%
+  dplyr::group_by(scenario.id, strategy, missing)%>%
+  dplyr::summarise(type1=mean(reject.h0), mean.bias = mean(bias))%>%
+  miss.desc()%>%
+  dplyr::mutate(do = 0.2)%>%
+  bind_rows(
+    h0.sing.sum(x1.sc21.sing)%>%
+      filter(grepl("mnar", missing)>0, strategy=="cca")%>%
+      dplyr::select(-c(mean_pc, mean_pt))
+  )
+
+saveRDS(x1.nonest.ex, "cluster/out/wald/2xcont/nonest/sc21_do20_nonest.rds")

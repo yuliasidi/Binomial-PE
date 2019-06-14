@@ -39,10 +39,10 @@ do.val <- 0.05
    dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
                          mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = -0.3, b1 = 0.1, b2 = -0.01)
    ci.full <- dt0%>%wald.ci(ss$M2,'y')
-   
+
    #define missingness parameters and do rates
-   m.param <- miss.param.assign.x2.cont(do = do.val, anal.type = anal.type) 
-                           
+   m.param <- miss.param.assign.x2.cont(do = do.val, anal.type = anal.type)
+
    #impose missing values and perform analysis
   ci.miss.mnar1 <- m.param%>%
     slice(1)%>%
@@ -67,7 +67,7 @@ do.val <- 0.05
     seed.mice = 10000*scenario + idx,
     mu.C = 1.55, sd.C = 0.05))%>%
     dplyr::select(missing, results)
-    
+
   ci.miss <- bind_rows(ci.miss.mnar1, ci.miss.mnar2)%>%
     dplyr::mutate(scenario.id = ss$scenario.id,
     p_C = ss$p_C,
@@ -76,11 +76,11 @@ do.val <- 0.05
     do = do.val,
     sim.id = idx)
 
-   ci.all <- list(ci.full, ci.miss)%>%purrr::set_names(c("ci.full","ci.miss")) 
+   ci.all <- list(ci.full, ci.miss)%>%purrr::set_names(c("ci.full","ci.miss"))
 
-saveRDS(ci.all, sprintf("cont2xH0_%s_%s_sc%d_do%d_param%d1_%d.rds", 
+saveRDS(ci.all, sprintf("cont2xH0_%s_%s_sc%d_do%d_param%d1_%d.rds",
                            method, anal.type, scenario, round(100*do.val,0), param, idx))
-   
+
 
 
 

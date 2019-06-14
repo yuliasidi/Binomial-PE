@@ -63,7 +63,7 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
     seed.mice = 10000*scenario + x,
-    mu.T = 0.65, sd.T = 0.05))%>%
+    mu.T = 0.55, sd.T = 0.05))%>%
     dplyr::select(missing, results)
 
   ci.miss.mnar2 <- m.param%>%
@@ -75,7 +75,7 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
     seed.mice = 10000*scenario + x,
-    mu.C = 1.8, sd.C = 0.05))%>%
+    mu.C = 2, sd.C = 0.05))%>%
     dplyr::select(missing, results)
     
   ci.miss <- bind_rows(ci.miss.mnar1, ci.miss.mnar2)%>%

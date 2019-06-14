@@ -300,6 +300,14 @@ saveRDS(h0.sing.do5, "cluster/out/overall/h0.sing.wn.5.rds")
 
 ### MICE ###
 
+
+x1.sc25.mice.do5.1 <- readRDS("cluster/out/wn/2xcont/do5/cont2xH0_wn_mice_sc25_do5_param1.rds")
+x1.sc25.mice.do5.2 <- readRDS("cluster/out/wn/2xcont/do5/cont2xH0_wn_mice_sc25_do5_param12.rds")
+x1.sc25.mice.do5.local <- readRDS("cluster/out/wn/2xcont/do5/cont2xH0_wn_mice_sc25_do5_param11_local.rds")
+x1.sc25.mice.do5 <- append(x1.sc25.mice.do5.1, x1.sc25.mice.do5.2, x1.sc25.mice.do5.local)
+remove(x1.sc25.mice.do5.1, x1.sc25.mice.do5.2, x1.sc25.mice.do5.local)
+
+
 h0.mice.do5 <-
   map_df(list.files("cluster/out/wn/2xcont/do5/", "cont2xH0_wn_mice", full.names = T), 
          .f = function(file) {
