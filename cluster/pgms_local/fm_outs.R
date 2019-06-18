@@ -329,12 +329,31 @@ saveRDS(h0.sing.do5, "cluster/out/overall/h0.sing.fm.5.rds")
 
 
 ### MICE ###
+
+
+x1.sc25.mice.do5.condor <- readRDS("cluster/out/fm/2xcont/do5/cont2xH0_fm_mice_sc25_do5_param1.rds")
+x1.sc25.mice.do5.local <- readRDS("cluster/out/fm/2xcont/do5/cont2xH0_fm_mice_sc25_do5_param1_local.rds")
+x1.sc25.mice.do5 <- append(x1.sc25.mice.do5.condor, x1.sc25.mice.do5.local)
+remove(x1.sc25.mice.do5.condor, x1.sc25.mice.do5.local)
+
+
+x1.sc26.mice.do5.condor <- readRDS("cluster/out/fm/2xcont/do5/cont2xH0_fm_mice_sc26_do5_param1.rds")
+x1.sc26.mice.do5.local <- readRDS("cluster/out/fm/2xcont/do5/cont2xH0_fm_mice_sc26_do5_param1_local.rds")
+x1.sc26.mice.do5 <- append(x1.sc26.mice.do5.condor, x1.sc26.mice.do5.local)
+remove(x1.sc26.mice.do5.condor, x1.sc26.mice.do5.local)
+
+ll <- c(2,4,6,17,19,21,23)
+
 h0.mice.do5 <-
-  map_df(list.files("cluster/out/fm/2xcont/do5/", "cont2xH0_fm_mice", full.names = T), 
-         .f = function(file) {
-           df <- readRDS(file)
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/fm/2xcont/do5/", paste0("cont2xH0_fm_mice_sc", sc, "_"), full.names = T))
            h0.mice.sum(df)
          })%>%
+  bind_rows(
+    h0.mice.sum(x1.sc25.mice.do5),
+    h0.mice.sum(x1.sc26.mice.do5)
+  )%>%
   dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
 
 saveRDS(h0.mice.do5, "cluster/out/overall/h0.mice.fm.5.rds")

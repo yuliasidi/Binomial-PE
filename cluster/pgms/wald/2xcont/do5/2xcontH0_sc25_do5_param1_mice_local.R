@@ -28,7 +28,7 @@ ss <- ss.bounds%>%
 
 do.val <- 0.05
 
-x1 <- parallel::mclapply(X = c(10001,10003,1), 
+x1 <- parallel::mclapply(X = seq(10001,10003,1), 
                          mc.cores = 3,
                          FUN= function(idx) 
                            

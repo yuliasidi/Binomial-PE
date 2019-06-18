@@ -27,7 +27,7 @@ source("miss.param.assign.x2.cont.R")
 ss.bounds <- readRDS("ss.bounds.rds")
 
 method <- 'fm'
-scenario <- 26
+scenario <- 25
 param <- 1
 anal.type <- "mice"
 
@@ -39,7 +39,7 @@ do.val <- 0.05
 system.time({
   
   
-   set.seed(10000*scenario + idx)                                                   
+   set.seed(10000*scenario + 5000 + idx)                                                   
    #generate full data with desired correlation structure
    dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
                          mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = -0.3, b1 = 0.1, b2 = -0.01)
@@ -58,7 +58,7 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + idx,
     seed.mice = 10000*scenario + idx,
-    mu.T = 0.65, sd.T = 0.05))%>%
+    mu.T = 0.6, sd.T = 0.05))%>%
     dplyr::select(missing, results)
 
   ci.miss.mnar2 <- m.param%>%
@@ -85,7 +85,7 @@ system.time({
 
 })
 
-saveRDS(ci.all, sprintf("cont2xH0_%s_%s_sc%d_do%d_param%d_%d.rds", 
+saveRDS(ci.all, sprintf("cont2xH0_%s_%s_sc%d_do%d_param%d1_%d.rds", 
                     method, anal.type, scenario, round(100*do.val,0), param, idx))
 
 

@@ -12,6 +12,12 @@ ss <- readRDS("cluster/ss.bounds.rds")
 
 full.type1 <- map_df(list.files("cluster/out/overall", "full.type1", full.names = T), readRDS)
 
+#check phats for each scenario/method again
+# check <- full.type1%>%
+#   dplyr::mutate(pc.check = round(C_phat - p_C, 3),
+#                 pt.check = round(T_phat - p_C + M2, 3),
+#                 m2.check = round(C_phat - T_phat - M2, 3))
+
 h0.full.all <-
   full.type1%>%
   ggplot(aes(x = p_C, y = reject.h0)) + 

@@ -294,11 +294,16 @@ x1.sc23.mice <- append(append(x1.sc23.mice1,x1.sc23.mice2),append(x1.sc23.mice1.
 
 x1.sc25.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc25_do20_param1.rds")
 
-x1.sc22.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc22_do20_param1.rds")
-h0.mice.sum(x1.sc22.mice)
+ll <- c(1,3,5,7,8,22,24,27,28,29)
 
-x1.sc3.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc3_do20_param1.rds")
-h0.mice.sum(x1.sc3.mice)
+
+
+
+x1.sc9.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc9_do20_param1.rds")
+h0.mice.sum(x1.sc9.mice)
+
+x1.sc29.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc29_do20_param1.rds")
+h0.mice.sum(x1.sc29.mice)
 
 
 h0.mice <-
@@ -599,7 +604,7 @@ h0.mice.do5 <-
   bind_rows(
     h0.mice.sum(x1.sc25.mice.do5),
     h0.mice.sum(x1.sc26.mice.do5)
-    )
+    )%>%
   dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
 
 saveRDS(h0.mice.do5, "cluster/out/overall/h0.mice.wald.5.rds")
