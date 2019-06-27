@@ -21,37 +21,33 @@ source("funs/pcheck.cca.R")
 
 
 
+################################################
+# Empirical type-I error - Fully observed data #
+################################################
 
-#Read and summarise all the single value imputations
-x1.sc21.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc21_do20_param1.rds")
-x1.sc21.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc21_do20_param11.rds")
-x1.sc21.sing <- append(x1.sc21.sing1,x1.sc21.sing2)
-remove(x1.sc21.sing1, x1.sc21.sing2)
-x1.sc21.sing.h1 <- readRDS("cluster/out/wald/2xcont/cont2xH1_wald_sing_sc21_do20_param1.rds")
+ll.sing1 <- c(2,3,5,7,17,19,21)
+ll.sing2 <- c(1,4,6,seq(8,16,1),18,20,seq(22,30,1))
 
-
-x1.sc19.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc19_do20_param1.rds")
-x1.sc19.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc19_do20_param11.rds")
-x1.sc19.sing <- append(x1.sc19.sing1,x1.sc19.sing2)
-remove(x1.sc19.sing1, x1.sc19.sing2)
-
-x1.sc17.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc17_do20_param1.rds")
-x1.sc17.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc17_do20_param11.rds")
-x1.sc17.sing <- append(x1.sc17.sing1,x1.sc17.sing2)
-remove(x1.sc17.sing1, x1.sc17.sing2)
-
-x1.sc2.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc2_do20_param1.rds")
-x1.sc2.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc2_do20_param11.rds")
-x1.sc2.sing <- append(x1.sc2.sing1,x1.sc2.sing2)
-remove(x1.sc2.sing1, x1.sc2.sing2)
-x1.sc2.sing.h1 <- readRDS("cluster/out/wald/2xcont/cont2xH1_wald_sing_sc2_do20_param1.rds")
-
-x1.sc23.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc23_do20_param1.rds")
-x1.sc25.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc25_do20_param1.rds")
-x1.sc26.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc26_do20_param1.rds")
-
-x1.sc4.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc4_do20_param1.rds")
-x1.sc6.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc6_do20_param1.rds")
+full.type1 <-
+  map_df(ll.sing1, 
+         .f = function(sc) {
+           df1 <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                    sprintf("cont2xH0_wald_sing_sc%s_do20_param1.rds", sc), 
+                                    full.names = T))
+           df2 <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                     sprintf("cont2xH0_wald_sing_sc%s_do20_param11.rds", sc), 
+                                     full.names = T))
+           df <- append(df1,df2)
+           full.check(df, sc)
+         })%>%
+  bind_rows( map_df(ll.sing2, 
+                     .f = function(sc) {
+                       df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                                 sprintf("cont2xH0_wald_sing_sc%s_do20_param1.rds", sc), 
+                                                 full.names = T))
+                       full.check(df, sc)
+                     }))%>%
+  dplyr::mutate(method = "wald")
 
 
 #x1.sc21.bw1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_bw_sc21_do20_param1.rds")
@@ -59,164 +55,115 @@ x1.sc6.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc6_do20_para
 #x1.sc21.bw <- append(x1.sc21.bw1,x1.sc21.bw2)
 #remove(x1.sc21.bw1, x1.sc21.bw2)
 
-x1.sc7.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc7_do20_param1.rds")
-x1.sc7.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc7_do20_param11.rds")
-x1.sc7.sing <- append(x1.sc7.sing1,x1.sc7.sing2)
-remove(x1.sc7.sing1, x1.sc7.sing2)
- 
+saveRDS(full.type1%>%
+          dplyr::arrange(scenario.id), "cluster/out/overall/full.type1.wald.rds")
 
-x1.sc5.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc5_do20_param1.rds")
-x1.sc5.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc5_do20_param11.rds")
-x1.sc5.sing <- append(x1.sc5.sing1,x1.sc5.sing2)
-remove(x1.sc5.sing1, x1.sc5.sing2)
-
-x1.sc3.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc3_do20_param1.rds")
-x1.sc3.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc3_do20_param11.rds")
-x1.sc3.sing <- append(x1.sc3.sing1,x1.sc3.sing2)
-remove(x1.sc3.sing1, x1.sc3.sing2)
-
-x1.sc1.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc1_do20_param1.rds")
-x1.sc8.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc8_do20_param1.rds")
-x1.sc9.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc9_do20_param1.rds")
-x1.sc10.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc10_do20_param1.rds")
-x1.sc11.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc11_do20_param1.rds")
-x1.sc12.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc12_do20_param1.rds")
-x1.sc13.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc13_do20_param1.rds")
-x1.sc14.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc14_do20_param1.rds")
-x1.sc15.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc15_do20_param1.rds")
-x1.sc16.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc16_do20_param1.rds")
-x1.sc18.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc18_do20_param1.rds")
-x1.sc20.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc20_do20_param1.rds")
-x1.sc22.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc22_do20_param1.rds")
-x1.sc24.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc24_do20_param1.rds")
-x1.sc27.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc27_do20_param1.rds")
-x1.sc28.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc28_do20_param1.rds")
-x1.sc29.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc29_do20_param1.rds")
-x1.sc30.sing <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc30_do20_param1.rds")
-
-
-
-
-
-#check p_C, p_T and type1/power for full data
-full.type1<-
-  bind_rows(
-    full.check(x1.sc1.sing, 1),
-    full.check(x1.sc2.sing, 2),
-    full.check(x1.sc3.sing, 3),
-    full.check(x1.sc4.sing, 4),
-    full.check(x1.sc5.sing, 5),
-    full.check(x1.sc6.sing, 6),
-    full.check(x1.sc7.sing, 7),
-    full.check(x1.sc8.sing, 8),
-    full.check(x1.sc9.sing, 9),
-    full.check(x1.sc10.sing, 10),
-    full.check(x1.sc11.sing, 11),
-    full.check(x1.sc12.sing, 12),
-    full.check(x1.sc13.sing, 13),
-    full.check(x1.sc14.sing, 14),
-    full.check(x1.sc15.sing, 15),
-    full.check(x1.sc16.sing, 16),
-    full.check(x1.sc17.sing, 17),
-    full.check(x1.sc18.sing, 18),
-    full.check(x1.sc19.sing, 19),
-    full.check(x1.sc20.sing, 20),
-    full.check(x1.sc21.sing, 21),
-    full.check(x1.sc22.sing, 22),
-    full.check(x1.sc23.sing, 23),
-    full.check(x1.sc24.sing, 24),
-    full.check(x1.sc25.sing, 25),
-    full.check(x1.sc26.sing, 26),
-    full.check(x1.sc27.sing, 27),
-    full.check(x1.sc28.sing, 28),
-    full.check(x1.sc29.sing, 29),
-    full.check(x1.sc30.sing, 30)
-  )%>%
-  dplyr::mutate(method = "wald")
-
-saveRDS(full.type1, "cluster/out/overall/full.type1.wald.rds")
+################################################
+# Empirical power - Fully observed data #
+################################################
 
 
 #check power
+ll <- c(seq(1,17,1),21)
 
-full.check(x1.sc21.sing.h1, 21)
-full.check(x1.sc2.sing.h1, 2)
+full.power <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                     sprintf("cont2xH1_wald_sing_sc%s_do20_param1.rds", sc), 
+                                     full.names = T))
+           full.check(df, sc)
+         })%>%
+  dplyr::mutate(method = "wald")
+
+saveRDS(full.power%>%
+          dplyr::arrange(scenario.id), "cluster/out/overall/full.power.wald.rds")
 
 
-#check do rates
+#########################################
+# Check do rates, data under H0, DO=20% #
+########################################
+
+ll.sing1 <- c(2,3,5,7,17,19,21)
+ll.sing2 <- c(1,4,6,seq(8,16,1),18,20,seq(22,30,1))
 
 do.check.do20 <-
-  bind_rows(
-    do.check(x1.sc1.sing),
-    do.check(x1.sc2.sing),
-    do.check(x1.sc3.sing),
-    do.check(x1.sc4.sing),
-    do.check(x1.sc5.sing),
-    do.check(x1.sc6.sing),
-    do.check(x1.sc7.sing),
-    do.check(x1.sc8.sing),
-    do.check(x1.sc9.sing),
-    do.check(x1.sc10.sing),
-    do.check(x1.sc11.sing),
-    do.check(x1.sc12.sing),
-    do.check(x1.sc13.sing),
-    do.check(x1.sc14.sing),
-    do.check(x1.sc15.sing),
-    do.check(x1.sc16.sing),
-    do.check(x1.sc17.sing),
-    do.check(x1.sc18.sing),
-    do.check(x1.sc19.sing),
-    do.check(x1.sc20.sing),
-    do.check(x1.sc21.sing),
-    do.check(x1.sc22.sing),
-    do.check(x1.sc23.sing),
-    do.check(x1.sc24.sing),
-    do.check(x1.sc25.sing),
-    do.check(x1.sc26.sing),
-    do.check(x1.sc27.sing),
-    do.check(x1.sc28.sing),
-    do.check(x1.sc29.sing),
-    do.check(x1.sc30.sing))%>%
-    dplyr::mutate(method = "wald", do = 0.2, hyp = "H0")
+  map_df(ll.sing1, 
+         .f = function(sc) {
+           df1 <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                     sprintf("cont2xH0_wald_sing_sc%s_do20_param1.rds", sc), 
+                                     full.names = T))
+           df2 <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                     sprintf("cont2xH0_wald_sing_sc%s_do20_param11.rds", sc), 
+                                     full.names = T))
+           df <- append(df1,df2)
+           do.check(df)
+         })%>%
+  bind_rows( map_df(ll.sing2, 
+                    .f = function(sc) {
+                      df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                               sprintf("cont2xH0_wald_sing_sc%s_do20_param1.rds", sc), 
+                                               full.names = T))
+                      do.check(df)
+                    }))%>%
+  dplyr::mutate(method = "wald", do = 0.2, hyp = "H0")
 
-saveRDS(do.check.do20, "cluster/out/overall/do.check.wald.20.rds")
 
-do.check(x1.sc21.sing.h1)
+saveRDS(do.check.do20%>%
+          dplyr::arrange(scenario.id), "cluster/out/overall/do.check.wald.20.rds")
+
+
+#########################################
+# Check do rates, data under H1, DO=20% #
+#########################################
+
+ll <- c(seq(1,17,1),21)
+
+do.check.do20.h1 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                    sprintf("cont2xH1_wald_sing_sc%s_do20_param1.rds", sc), 
+                                    full.names = T))
+           do.check(df)
+         })%>%
+  dplyr::mutate(method = "wald", do = 0.2, hyp = "H1")
+
+saveRDS(do.check.do20.h1%>%
+          dplyr::arrange(scenario.id), "cluster/out/overall/do.check.wald.20.h1.rds")
+
+df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                         sprintf("cont2xH1_wald_sing_sc%s_do20_param1.rds", sc), 
+                         full.names = T))
+do.check(df)
 do.check(x1.sc2.sing.h1)
 
+##########################################################################
+# Empirical type-I error - Incomplete, single imputation strategy, DO=20%#
+##########################################################################
+
+ll.sing1 <- c(2,3,5,7,17,19,21)
+ll.sing2 <- c(1,4,6,seq(8,16,1),18,20,seq(22,30,1))
+
 h0.sing <-
-  bind_rows(
-    h0.sing.sum(x1.sc1.sing),
-    h0.sing.sum(x1.sc2.sing),
-    h0.sing.sum(x1.sc3.sing),
-    h0.sing.sum(x1.sc4.sing),
-    h0.sing.sum(x1.sc5.sing),
-    h0.sing.sum(x1.sc6.sing),
-    h0.sing.sum(x1.sc7.sing),
-    h0.sing.sum(x1.sc8.sing),
-    h0.sing.sum(x1.sc9.sing),
-    h0.sing.sum(x1.sc10.sing),
-    h0.sing.sum(x1.sc11.sing),
-    h0.sing.sum(x1.sc12.sing),
-    h0.sing.sum(x1.sc13.sing),
-    h0.sing.sum(x1.sc14.sing),
-    h0.sing.sum(x1.sc15.sing),
-    h0.sing.sum(x1.sc16.sing),
-    h0.sing.sum(x1.sc17.sing),
-    h0.sing.sum(x1.sc18.sing),
-    h0.sing.sum(x1.sc19.sing),
-    h0.sing.sum(x1.sc20.sing),
-    h0.sing.sum(x1.sc21.sing),
-    h0.sing.sum(x1.sc22.sing),
-    h0.sing.sum(x1.sc23.sing),
-    h0.sing.sum(x1.sc24.sing),
-    h0.sing.sum(x1.sc25.sing),
-    h0.sing.sum(x1.sc26.sing),
-    h0.sing.sum(x1.sc27.sing),
-    h0.sing.sum(x1.sc28.sing),
-    h0.sing.sum(x1.sc29.sing),
-    h0.sing.sum(x1.sc30.sing)
-  )%>%
+  map_df(ll.sing1, 
+         .f = function(sc) {
+           df1 <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                     sprintf("cont2xH0_wald_sing_sc%s_do20_param1.rds", sc), 
+                                     full.names = T))
+           df2 <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                     sprintf("cont2xH0_wald_sing_sc%s_do20_param11.rds", sc), 
+                                     full.names = T))
+           df <- append(df1,df2)
+           h0.sing.sum(df)
+         })%>%
+  bind_rows( map_df(ll.sing2, 
+                    .f = function(sc) {
+                      df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                               sprintf("cont2xH0_wald_sing_sc%s_do20_param1.rds", sc), 
+                                               full.names = T))
+                      h0.sing.sum(df)
+                    }))%>%
   dplyr::mutate(method = "wald")
 
 
@@ -235,7 +182,9 @@ saveRDS(h0.sing, "cluster/out/overall/h0.sing.wald.20.rds")
 h0.sing.sum(x1.sc21.sing.h1)%>%filter(strategy=="cca")
 h0.sing.sum(x1.sc2.sing.h1)%>%filter(strategy=="cca")
 
-#Read and summarise all the MICE imputations
+##########################################################################
+# Empirical type-I error - Incomplete, MICE imputation strategy, DO=20%  #
+##########################################################################
 
 x1.sc21.mice1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc21_do20_param1.rds")
 x1.sc21.mice2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc21_do20_param11.rds")
@@ -294,17 +243,7 @@ x1.sc23.mice <- append(append(x1.sc23.mice1,x1.sc23.mice2),append(x1.sc23.mice1.
 
 x1.sc25.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc25_do20_param1.rds")
 
-ll <- c(1,3,5,7,8,22,24,27,28,29)
-
-
-
-
-x1.sc9.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc9_do20_param1.rds")
-h0.mice.sum(x1.sc9.mice)
-
-x1.sc29.mice <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_mice_sc29_do20_param1.rds")
-h0.mice.sum(x1.sc29.mice)
-
+ll <- c(1, 3, 5, seq(7, 16, 1), 18, 20, 22, 24, 25, 27, 28, 29, 30)
 
 h0.mice <-
   bind_rows(
@@ -321,24 +260,58 @@ h0.mice <-
       filter(k.C.spec!="normal(1.65, 0.05)",k.C.spec!="normal(1.75, 0.05)"),
     h0.mice.sum(x1.sc6.mice)%>%
       filter(k.C.spec!="normal(1.3, 0.05)"),
-    h0.mice.sum(x1.sc25.mice)
+    h0.mice.sum(x1.sc25.mice),
+    map_df(ll, 
+           .f = function(sc) {
+             df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                      sprintf("cont2xH0_wald_mice_sc%s_do20_param1.rds", sc), 
+                                      full.names = T))
+             h0.mice.sum(df)
+           })
     
   )%>%
   dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
 
 saveRDS(h0.mice, "cluster/out/overall/h0.mice.wald.20.rds")
 
+#####################################################################
+# Empirical power - Incomplete, single imputation strategy, DO=20%  #
+#####################################################################
+ll <- seq(1,21,1)
 
-h0.mice.sum(x1.sc21.mice.h1)
+power.sing.20 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                    sprintf("cont2xH1_wald_sing_sc%s_do20_param1.rds", sc), 
+                                    full.names = T))
+           h0.sing.sum(df)%>%
+             dplyr::select(-mean.bias)%>%
+             dplyr::rename(power=type1)
+         })%>%
+  dplyr::mutate(method = "wald")
 
-h0.sing.sum(x1.sc2.sing)%>%
-  dplyr::filter(strategy=="cca")
-h0.sing.sum(x1.sc21.bw)
+saveRDS(power.sing.20, "cluster/out/overall/h1.sing.wald.20.rds")
 
 
-h0.mice.sum(x1.sc6.mice)
+###################################################################
+# Empirical power - Incomplete, MICE imputation strategy, DO=20%  #
+###################################################################
+ll <- seq(1,30,1)
 
+power.mice.20 <-
+  map_df(ll, 
+       .f = function(sc) {
+         df <- readRDS(list.files("cluster/out/wald/2xcont/", 
+                                  sprintf("cont2xH1_wald_mice_sc%s_do20_param1.rds", sc), 
+                                  full.names = T))
+         h0.mice.sum(df)%>%
+           dplyr::select(-mean.bias)%>%
+           dplyr::rename(power=type1)
+       })%>%
+  dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
 
+saveRDS(power.mice.20, "cluster/out/overall/h1.mice.wald.20.rds")
 
 ##################
 #### do = 15% ####

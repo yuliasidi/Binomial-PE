@@ -418,14 +418,14 @@ dev.off()
 
 h0.mice.mnar1 <- 
   h0.mnar%>%
-  dplyr::filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26))%>%
+ # dplyr::filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26))%>%
   dplyr::filter(missing.desc=="p_T_obs > p_T_full", is.na(type1.mice)==F)%>%
   ggplot(aes(x=do,y=type1.mice,colour=method)) + 
   geom_point(aes(shape = method)) + 
-  facet_wrap(~flabel1,nrow=3, ncol = 3,labeller = ggplot2::label_parsed) + 
+  facet_wrap(~flabel1,nrow=5, ncol = 6,labeller = ggplot2::label_parsed) + 
   geom_hline(yintercept=c(0.9,1.1)*0.025,
              linetype=2) + 
-  scale_y_continuous(breaks = seq(0, 0.045, 0.01), limits = c(0, 0.06)) +
+  scale_y_continuous(breaks = seq(0, 0.05, 0.01), limits = c(0, 0.06)) +
   scale_x_continuous(breaks = seq(0.05, 0.2, 0.05), limits = c(0, 0.25),
                      labels = scales::percent_format(accuracy = 1))+
   labs(y = "Empirical Type-I error",
@@ -447,7 +447,7 @@ h0.mice.mnar2 <-
   facet_wrap(~flabel2,nrow=3, ncol = 3, labeller = ggplot2::label_parsed) + 
   geom_hline(yintercept=c(0.9,1.1)*0.025,
              linetype=2) + 
-  scale_y_continuous(breaks = seq(0, 0.045, 0.01), limits = c(0, 0.06)) +
+  scale_y_continuous(breaks = seq(0, 0.05, 0.01), limits = c(0, 0.06)) +
   scale_x_continuous(breaks = seq(0.05, 0.2, 0.05), limits = c(0, 0.25),
                      labels = scales::percent_format(accuracy = 1))+
   labs(y = "Empirical Type-I error",

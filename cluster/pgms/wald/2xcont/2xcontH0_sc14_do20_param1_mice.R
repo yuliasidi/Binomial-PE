@@ -13,7 +13,7 @@ library(dplyr)
 ss.bounds <- readRDS("ss.bounds.rds")
 
 method <- 'wald'
-scenario <- 18
+scenario <- 14
 param <- 1
 anal.type <- "mice"
 
@@ -63,7 +63,7 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
     seed.mice = 10000*scenario + x,
-    mu.T = 0.68, sd.T = 0.05))%>%
+    mu.T = 0.78, sd.T = 0.05))%>%
     dplyr::select(missing, results)
 
   ci.miss.mnar2 <- m.param%>%
@@ -75,7 +75,7 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
     seed.mice = 10000*scenario + x,
-    mu.C = 1.65, sd.C = 0.05))%>%
+    mu.C = 1.35, sd.C = 0.05))%>%
     dplyr::select(missing, results)
     
   ci.miss <- bind_rows(ci.miss.mnar1, ci.miss.mnar2)%>%

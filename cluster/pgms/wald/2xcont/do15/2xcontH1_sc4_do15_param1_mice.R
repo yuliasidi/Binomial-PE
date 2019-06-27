@@ -13,14 +13,14 @@ library(dplyr)
 ss.bounds <- readRDS("ss.bounds.rds")
 
 method <- 'wald'
-scenario <- 18
+scenario <- 4
 param <- 1
 anal.type <- "mice"
 
 ss <- ss.bounds%>%
   dplyr::filter(method == "wald", scenario.id == scenario)
 
-do.val <- 0.2
+do.val <- 0.15
 
 library(parallel)
 cl <- makeCluster(Sys.getenv()["SLURM_NTASKS"], type = "MPI")
@@ -46,7 +46,7 @@ system.time({
    
    set.seed(10000*scenario + x)                                                   
    #generate full data with desired correlation structure
-   dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C - ss$M2, n.arm = ss$n.arm, 
+   dt0 <- dt.sim.x2.cont(p_C = ss$p_C, p_T = ss$p_C, n.arm = ss$n.arm, 
                          mu1 = 4, mu2 = 100, sigma1 = 1, sigma2 = 20, r12 = -0.3, b1 = 0.1, b2 = -0.01)
    ci.full <- dt0%>%wald.ci(ss$M2,'y')
    
@@ -63,7 +63,7 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
     seed.mice = 10000*scenario + x,
-    mu.T = 0.68, sd.T = 0.05))%>%
+    mu.T = 0.75, sd.T = 0.05))%>%
     dplyr::select(missing, results)
 
   ci.miss.mnar2 <- m.param%>%
@@ -75,14 +75,14 @@ system.time({
     mice.anal = T,
     M2 = ss$M2, seed = 10000*scenario + x,
     seed.mice = 10000*scenario + x,
-    mu.C = 1.65, sd.C = 0.05))%>%
+    mu.C = 1.45, sd.C = 0.05))%>%
     dplyr::select(missing, results)
     
   ci.miss <- bind_rows(ci.miss.mnar1, ci.miss.mnar2)%>%
     dplyr::mutate(scenario.id = ss$scenario.id,
     p_C = ss$p_C,
     M2 = ss$M2,
-    type = 't.H0',
+    type = 't.H1',
     do = do.val,
     sim.id = x)
 
@@ -91,7 +91,7 @@ system.time({
  })
 })
 
-saveRDS(x1, sprintf("results/cont2xH0_%s_%s_sc%d_do%d_param%d.rds", 
+saveRDS(x1, sprintf("results/cont2xH1_%s_%s_sc%d_do%d_param%d.rds", 
                     method, anal.type, scenario, round(100*do.val,0), param))
 
 
