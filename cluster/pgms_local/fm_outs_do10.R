@@ -19,90 +19,102 @@ ss <- readRDS("cluster/ss.bounds.rds")
 ss <- ss%>%
   dplyr::filter(method == "fm")
 
-#Read and summarise all the single value imputations
-x1.sc21.sing1 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc21_do20_param1.rds")
-x1.sc21.sing2 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc21_do20_param11.rds")
-x1.sc21.sing <- append(x1.sc21.sing1,x1.sc21.sing2)
-remove(x1.sc21.sing1, x1.sc21.sing2)
+#######################################################
+# Check full data under H0, DO=10% vs previous result #
+#######################################################
 
+ll <- seq(1,30,1)
 
-x1.sc19.sing1 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc19_do20_param1.rds")
-x1.sc19.sing2 <- readRDS("cluster/out/fm/2xcont/cont2xH0_fm_sing_sc19_do20_param11.rds")
-x1.sc19.sing <- append(x1.sc19.sing1,x1.sc19.sing2)
-remove(x1.sc19.sing1, x1.sc19.sing2)
-
-ll <- c(seq(1,18,1), 20, seq(22,30,1))  
-
-#check p_C, p_T and type1/power for full data
-full.type1 <-
+full.type1.do10 <-
   map_df(ll, 
          .f = function(sc) {
-           dt <- readRDS(list.files("cluster/out/fm/2xcont/", paste0("cont2xH0_fm_sing_sc", sc, "_"), full.names = T))
-           full.check(dt, sc)
+           df <- readRDS(list.files("cluster/out/fm/2xcont/do10", 
+                                    sprintf("cont2xH0_fm_sing_sc%s_do10_param1.rds", sc), 
+                                    full.names = T))
+           full.check(df, sc)
          })%>%
-  bind_rows(
-    full.check(x1.sc21.sing, 21),
-    full.check(x1.sc19.sing, 19))%>%
   dplyr::mutate(method = "fm")
-  
 
-full.type1%>%
-  dplyr::mutate(p_C.check = round(C_phat,3) - p_C,
-                M2.check = round(C_phat - T_phat - M2, 3))
+full.type1 <- readRDS("cluster/out/overall/full.type1.fm.rds")
 
-saveRDS(full.type1, "cluster/out/overall/full.type1.fm.rds")
+#compare full datasets between simulations for do=20% and do=10%, should be exactly the same
+compare::compare(full.type1%>%arrange(scenario.id),
+                 full.type1.do10%>%arrange(scenario.id))
+
+#########################################
+# Check do rates, data under H0, DO=10% #
+########################################
 
 #check do rates
-do.check.do20 <-
-  map_df(list.files("cluster/out/fm/2xcont/","cont2xH0_fm_sing_sc", full.names = T), 
+do.check.do10 <-
+  map_df(list.files("cluster/out/fm/2xcont/do10/","cont2xH0_fm_sing_sc", full.names = T), 
          .f = function(file) {
            dt <- readRDS(file)
-           do.check(dt)
-         })%>% bind_rows(do.check(x1.sc21.sing),
-                         do.check(x1.sc19.sing))%>%
-  dplyr::mutate(method = "fm", do = 0.20, hyp = "H0")
-
-saveRDS(do.check, "cluster/out/overall/do.check.fm.20.rds")
-
-
-h0.sing.do20 <-
-  map_df(list.files("cluster/out/fm/2xcont/","cont2xH0_fm_sing_sc", full.names = T), 
-         .f = function(file) {
-           dt <- readRDS(file)
-           h0.sing.sum(dt)
+           do.check(dt)%>%missing.desc.adj(do.adj = 10)
          })%>%
-  bind_rows( h0.sing.sum(x1.sc21.sing),
-             h0.sing.sum(x1.sc19.sing))%>%
+  dplyr::mutate(method = "fm", do = 0.10, hyp = "H0")
+
+saveRDS(do.check.do10, "cluster/out/overall/do.check.fm.10.rds")
+
+#########################################
+# Check do rates, data under H1, DO=15% #
+#########################################
+
+ll <- seq(1,30,1)
+
+do.check.do15.h1 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/fm/2xcont/", 
+                                    sprintf("cont2xH1_fm_sing_sc%s_do15_param1.rds", sc), 
+                                    full.names = T))
+           do.check(df)%>%missing.desc.adj(do.adj = 15)
+         })%>%
+  dplyr::mutate(method = "fm", do = 0.15, hyp = "H1")
+
+saveRDS(do.check.do15.h1%>%
+          dplyr::arrange(scenario.id), "cluster/out/overall/do.check.fm.15.h1.rds")
+
+##########################################################################
+# Empirical type-I error - Incomplete, single imputation strategy, DO=10%#
+##########################################################################
+
+h0.sing.do10 <-
+  map_df(list.files("cluster/out/fm/2xcont/do10","cont2xH0_fm_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)%>%missing.desc.adj(do.adj = 10)
+         })%>%
   dplyr::mutate(method = "fm")
 
 h0.sing.pcheck.mcar<-
-  pcheck.cca(h0.sing.do20,  miss.type = "mcar")
+  pcheck.cca(h0.sing.do10,  miss.type = "mcar")
 
 h0.sing.pcheck.mar<-
-  pcheck.cca(h0.sing.do20,  miss.type = "mar")
+  pcheck.cca(h0.sing.do10,  miss.type = "mar")
 
 h0.sing.pcheck.mnar<-
-  pcheck.cca(h0.sing.do20,  miss.type = "mnar")
+  pcheck.cca(h0.sing.do10,  miss.type = "mnar")
 
-saveRDS(h0.sing.do20, "cluster/out/overall/h0.sing.fm.20.rds")
+saveRDS(h0.sing.do10, "cluster/out/overall/h0.sing.fm.10.rds")
 
 
 ##########################################################################
-# Empirical type-I error - Incomplete, MICE imputation strategy, DO=20%  #
+# Empirical type-I error - Incomplete, MICE imputation strategy, DO=10%  #
 ##########################################################################
 
 ll <- seq(1,30,1)
 
-h0.mice.20 <- map_df(ll, 
+h0.mice.10 <- map_df(ll, 
                    .f = function(sc) {
-                     df <- readRDS(list.files("cluster/out/fm/2xcont/", 
-                                              sprintf("cont2xH0_fm_mice_sc%s_do20_param1.rds", sc), 
+                     df <- readRDS(list.files("cluster/out/fm/2xcont/do10", 
+                                              sprintf("cont2xH0_fm_mice_sc%s_do10_param1.rds", sc), 
                                               full.names = T))
-                     h0.mice.sum(df)
+                     h0.mice.sum(df)%>%missing.desc.adj(do.adj = 10)
                    })%>%
   dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
 
-saveRDS(h0.mice.20, "cluster/out/overall/h0.mice.fm.20.rds")
+saveRDS(h0.mice.10, "cluster/out/overall/h0.mice.fm.10.rds")
 
 
 

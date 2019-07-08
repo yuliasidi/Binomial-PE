@@ -18,158 +18,85 @@ ss <- readRDS("cluster/ss.bounds.rds")
 ss <- ss%>%
   dplyr::filter(method == "wn")
 
-#check p_C, p_T and type1/power for full data
+
+#######################################################
+# Check full data under H0, DO=15% vs previous result #
+#######################################################
+
 ll <- seq(1,30,1)
 
-full.type1 <-
+full.type1.do15 <-
   map_df(ll, 
          .f = function(sc) {
-           dt <- readRDS(list.files("cluster/out/wn/2xcont/", paste0("cont2xH0_wn_sing_sc", sc, "_"), full.names = T))
-           full.check(dt, sc)
+           df <- readRDS(list.files("cluster/out/wn/2xcont/do15", 
+                                    sprintf("cont2xH0_wn_sing_sc%s_do15_param1.rds", sc), 
+                                    full.names = T))
+           full.check(df, sc)
          })%>%
-  dplyr::mutate(method = "wn")
-
-full.type1%>%
-  dplyr::mutate(p_C.check = round(C_phat,3) - p_C,
-                M2.check = round(C_phat - T_phat - M2, 3))
-
-saveRDS(full.type1, "cluster/out/overall/full.type1.wn.rds")
-
-#check do rates
-do.check.do20 <-
-  map_df(list.files("cluster/out/wn/2xcont/","cont2xH0_wn_sing_sc", full.names = T), 
-         .f = function(file) {
-           dt <- readRDS(file)
-           do.check(dt)
-         })%>%
-  dplyr::mutate(method = "wn", do = 0.20, hyp = "H0")
-
-
-saveRDS(do.check.do20, "cluster/out/overall/do.check.wn.20.rds")
-
-#type-I error follow single value imputation
-h0.sing.do20 <-
-  map_df(list.files("cluster/out/wn/2xcont/","cont2xH0_wn_sing_sc", full.names = T), 
-         .f = function(file) {
-           dt <- readRDS(file)
-           h0.sing.sum(dt)
-         })%>%
-  dplyr::mutate(method = "wn")
-
-h0.sing.pcheck.mcar<-
-  pcheck.cca(h0.sing.do20,  miss.type = "mcar")
-
-h0.sing.pcheck.mar<-
-  pcheck.cca(h0.sing.do20,  miss.type = "mar")
-  
-h0.sing.pcheck.mnar<-
-  pcheck.cca(h0.sing.do20,  miss.type = "mnar")
-
-saveRDS(h0.sing.do20, "cluster/out/overall/h0.sing.wn.20.rds")
-
-
-##########################################################################
-# Empirical type-I error - Incomplete, MICE imputation strategy, DO=20%  #
-##########################################################################
-
-ll <- c(seq(1,20,1), seq(22,30,1))
-
-x1.sc21.mice <- readRDS("cluster/out/wn/2xcont/cont2xH0_wn_mice_sc21_do20_param1.rds")
-
-h0.mice.20 <-
-  bind_rows(h0.mice.sum.wn(x1.sc21.mice)%>%
-             dplyr::filter(k.C.spec!="normal(1.35, 0.05)"),
-          map_df(ll, 
-                 .f = function(sc) {
-                   df <- readRDS(list.files("cluster/out/wn/2xcont/", 
-                                            sprintf("cont2xH0_wn_mice_sc%s_do20_param1.rds", sc), 
-                                            full.names = T))
-                   h0.mice.sum.wn(df)
-                 })
-)%>%
-  dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
-
-saveRDS(h0.mice.20, "cluster/out/overall/h0.mice.wn.20.rds")
-
-
-##################
-#### do = 15% ####
-##################
-
-x1.sc21.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc21_do15_param1.rds")
-x1.sc19.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc19_do15_param1.rds")
-x1.sc17.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc17_do15_param1.rds")
-x1.sc2.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc2_do15_param1.rds")
-x1.sc4.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc4_do15_param1.rds")
-x1.sc6.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc6_do15_param1.rds")
-x1.sc23.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc23_do15_param1.rds")
-x1.sc25.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc25_do15_param1.rds")
-x1.sc26.sing.do15 <- readRDS("cluster/out/wn/2xcont/do15/cont2xH0_wn_sing_sc26_do15_param1.rds")
-
-full.type1.do15 <- 
-  bind_rows(
-    full.check(x1.sc21.sing.do15, 21),
-    full.check(x1.sc19.sing.do15, 19),
-    full.check(x1.sc17.sing.do15, 17),
-    full.check(x1.sc2.sing.do15, 2),
-    full.check(x1.sc4.sing.do15, 4),
-    full.check(x1.sc6.sing.do15, 6),
-    full.check(x1.sc23.sing.do15, 23),
-    full.check(x1.sc25.sing.do15, 25),
-    full.check(x1.sc26.sing.do15, 26)
-  )%>%
   dplyr::mutate(method = "wn")
 
 full.type1 <- readRDS("cluster/out/overall/full.type1.wn.rds")
 
 #compare full datasets between simulations for do=20% and do=15%, should be exactly the same
-compare::compare(full.type1%>%arrange(scenario.id), full.type1.do15%>%arrange(scenario.id))
+compare::compare(full.type1%>%arrange(scenario.id),
+                 full.type1.do15%>%arrange(scenario.id))
 
+
+#########################################
+# Check do rates, data under H0, DO=15% #
+########################################
 do.check.do15 <-
-  bind_rows(
-    do.check(x1.sc21.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc19.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc17.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc2.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc4.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc6.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc23.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc25.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    do.check(x1.sc26.sing.do15)%>%missing.desc.adj(do.adj = 15)
-  )%>%
+  map_df(list.files("cluster/out/wn/2xcont/do15","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           do.check(dt)%>%missing.desc.adj(do.adj = 15)
+         })%>%
   dplyr::mutate(method = "wn", do = 0.15, hyp = "H0")
+
 
 saveRDS(do.check.do15, "cluster/out/overall/do.check.wn.15.rds")
 
+##########################################################################
+# Empirical type-I error - Incomplete, single imputation strategy, DO=15%#
+##########################################################################
 
 h0.sing.do15 <-
-  bind_rows(
-    h0.sing.sum(x1.sc21.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc19.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc17.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc2.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc4.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc6.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc23.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc25.sing.do15)%>%missing.desc.adj(do.adj = 15),
-    h0.sing.sum(x1.sc26.sing.do15)%>%missing.desc.adj(do.adj = 15)
-  )%>%
+  map_df(list.files("cluster/out/wn/2xcont/do15","cont2xH0_wn_sing_sc", full.names = T), 
+         .f = function(file) {
+           dt <- readRDS(file)
+           h0.sing.sum(dt)%>%missing.desc.adj(do.adj = 15)
+         })%>%
   dplyr::mutate(method = "wn")
+
+h0.sing.pcheck.mcar<-
+  pcheck.cca(h0.sing.do15,  miss.type = "mcar")
+
+h0.sing.pcheck.mar<-
+  pcheck.cca(h0.sing.do15,  miss.type = "mar")
+  
+h0.sing.pcheck.mnar<-
+  pcheck.cca(h0.sing.do15,  miss.type = "mnar")
 
 saveRDS(h0.sing.do15, "cluster/out/overall/h0.sing.wn.15.rds")
 
 
-### MICE ###
+##########################################################################
+# Empirical type-I error - Incomplete, MICE imputation strategy, DO=15%  #
+##########################################################################
 
-h0.mice.do15 <-
-  map_df(list.files("cluster/out/wn/2xcont/do15/", "cont2xH0_wn_mice", full.names = T), 
-         .f = function(file) {
-           df <- readRDS(file)
-           h0.mice.sum.wn(df)
-         })%>%
+ll <- seq(1,30,1)
+
+h0.mice.15 <-
+          map_df(ll, 
+                 .f = function(sc) {
+                   df <- readRDS(list.files("cluster/out/wn/2xcont/do15", 
+                                            sprintf("cont2xH0_wn_mice_sc%s_do15_param1.rds", sc), 
+                                            full.names = T))
+                   h0.mice.sum.wn(df)%>%missing.desc.adj(do.adj = 15)
+                 })%>%
   dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
 
-saveRDS(h0.mice.do15, "cluster/out/overall/h0.mice.wn.15.rds")
+saveRDS(h0.mice.15, "cluster/out/overall/h0.mice.wn.15.rds")
 
 
 ##################

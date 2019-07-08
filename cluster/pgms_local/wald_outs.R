@@ -178,10 +178,6 @@ h0.sing.pcheck.mnar<-
 
 saveRDS(h0.sing, "cluster/out/overall/h0.sing.wald.20.rds")
 
-
-h0.sing.sum(x1.sc21.sing.h1)%>%filter(strategy=="cca")
-h0.sing.sum(x1.sc2.sing.h1)%>%filter(strategy=="cca")
-
 ##########################################################################
 # Empirical type-I error - Incomplete, MICE imputation strategy, DO=20%  #
 ##########################################################################
@@ -277,7 +273,7 @@ saveRDS(h0.mice, "cluster/out/overall/h0.mice.wald.20.rds")
 #####################################################################
 # Empirical power - Incomplete, single imputation strategy, DO=20%  #
 #####################################################################
-ll <- seq(1,21,1)
+ll <- seq(1,30,1)
 
 power.sing.20 <-
   map_df(ll, 
