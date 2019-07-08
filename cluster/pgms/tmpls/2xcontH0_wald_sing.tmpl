@@ -13,7 +13,7 @@ ss.bounds <- readRDS("ss.bounds.rds")
 
 method <- 'wald'
 scenario <- {{sc_id}}
-param <- {{param_id}}
+param <- 1
 anal.type <- "sing"
 
 ss <- ss.bounds%>%
@@ -31,7 +31,7 @@ system.time({
   
   x1 <- 
     parallel::clusterApply(cl,
-                           x = 1:5000, 
+                           x = 1:10000, 
                            fun=function(x){
                              
  
