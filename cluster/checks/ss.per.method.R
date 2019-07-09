@@ -6,15 +6,19 @@ ss <- readRDS("cluster/ss.bounds.rds")
 
 ss.plot <-
   ss%>%
+  dplyr::mutate(flabel = sprintf('Delta:%s', M2))%>%
   ggplot(aes(x=p_C, y = n.arm, fill = method)) +
   geom_bar(position = "dodge",
            stat = "identity") +
   theme_bw() +
-  facet_wrap(~M2) +
+  facet_wrap(~flabel, labeller = ggplot2::label_parsed) +
   theme(legend.position = "bottom") +
+  scale_fill_discrete(labels=c('FM','Wald','WN')) + 
   labs(x = "Event probability in control group",
        y = "N per arm",
-       fill = "Method")
+       fill = "Method") +
+  theme(text=element_text(size=15))
+
 
 
 pdf("cluster/checks/ss_per_method.pdf")

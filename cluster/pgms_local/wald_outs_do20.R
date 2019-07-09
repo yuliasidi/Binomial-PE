@@ -64,7 +64,7 @@ saveRDS(full.type1%>%
 
 
 #check power
-ll <- c(seq(1,17,1),21)
+ll <- seq(1,30,1)
 
 full.power <-
   map_df(ll, 

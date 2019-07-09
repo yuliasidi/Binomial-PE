@@ -59,6 +59,7 @@ cp.all.plot <-
   xlab("N per treatment group") +
   ylab("True coverage probability") +
   scale_x_continuous(limits = c(90,2000), breaks = c(100, seq(500,2000,500))) +
+  scale_color_discrete(labels=c('FM','Wald','WN')) +
   facet_wrap(~flabel, ncol = 4, nrow = 3,
              labeller = label_parsed) +
   theme_bw() +
@@ -127,6 +128,7 @@ cp.all.plot.small <-
   ggplot2::geom_hline(yintercept=0.95, colour="black") +
   ggplot2::scale_y_continuous(limits = c(0.90,1), breaks = c(0.90, 0.925, 0.95, 0.975, 1)) +
   scale_x_continuous(breaks = seq(20,90,10)) +
+  scale_color_discrete(labels=c('FM','Wald','WN')) +
   theme_bw() +
   theme(legend.position = "bottom",
         text = element_text(size = 13),
@@ -196,6 +198,7 @@ el.all%>%
   #ggplot2::geom_hline(yintercept=0.95, colour="black") +
   #ggplot2::geom_vline(xintercept=90, colour="grey") +
   ggplot2::scale_y_continuous(limits = c(0.025, 0.3)) +
+  scale_color_discrete(labels=c('FM','Wald','WN')) +
   xlab("N per treatment group") +
   ylab("CI Expected Length") +
   scale_x_continuous(limits = c(90,2000), breaks = c(100, seq(500,2000,500))) +
@@ -263,6 +266,7 @@ el.all.small%>%
   ggplot2::ggplot(aes(x = n1, y = el, group=Method)) +
   ggplot2::geom_line(aes(color=Method)) +
   ggplot2::geom_point(size=0.1, aes(color=Method)) +
+  scale_color_discrete(labels=c('FM','Wald','WN')) +
   #ggplot2::geom_hline(yintercept=0.95, colour="black") +
   #ggplot2::scale_y_continuous(limits = seq(0.9,1,0.1)) +
   theme_bw() +
