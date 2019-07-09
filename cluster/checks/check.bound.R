@@ -36,11 +36,12 @@ xx1 <- xx%>%
 
 ub.comp.plot <-
 xx1%>%
+  dplyr::mutate(flabel = sprintf('Delta:%s', M2))%>%
   ggplot(aes(x = n, y = up.diff)) +
   geom_line(aes(group = pc, color = pc)) +
-  facet_wrap(~M2) +
+  facet_wrap(~flabel, labeller = ggplot2::label_parsed) +
   labs(x = "N per arm",
-       y = "Uppder bounds difference (Wald - Wilson-Newcombe", color='pc') +
+       y = "Uppder bounds difference (Wald - WN)", color=latex2exp::TeX('p_C')) +
   theme_bw() +
   theme(legend.position = "bottom")
 
