@@ -557,3 +557,143 @@ purrr::walk(ll,
                 sep='\n') 
             })
 
+
+
+############################################
+## Wald - SLURM- no MPI, H1, do=15%, sing ##
+############################################
+
+ll <- seq(1,30,1)
+
+do.val <- 0.15
+
+purrr::walk(ll,
+            .f = function(scenario.id){
+              cat(
+                whisker::whisker.render(
+                  readLines('cluster/pgms/tmpls/2xcontH1_wald_sing_nompi.tmpl'),
+                  data = list(sc_id = scenario.id,
+                              val = do.val)
+                ),
+                file = file.path('cluster/pgms/wald/2xcont/do15',
+                                 sprintf("2xcontH1_sc%s_do%s_param1_sing.R", 
+                                         scenario.id, round(100*do.val,0))
+                ),
+                sep='\n') 
+            })
+
+
+############################################
+## Wald - SLURM- no MPI, H1, do=10%, sing ##
+############################################
+
+ll <- seq(1,30,1)
+
+do.val <- 0.10
+
+purrr::walk(ll,
+            .f = function(scenario.id){
+              cat(
+                whisker::whisker.render(
+                  readLines('cluster/pgms/tmpls/2xcontH1_wald_sing_nompi.tmpl'),
+                  data = list(sc_id = scenario.id,
+                              val = do.val)
+                ),
+                file = file.path('cluster/pgms/wald/2xcont/do10',
+                                 sprintf("2xcontH1_sc%s_do%s_param1_sing.R", 
+                                         scenario.id, round(100*do.val,0))
+                ),
+                sep='\n') 
+            })
+
+############################################
+## Wald - SLURM- no MPI, H1, do=5%, sing ##
+############################################
+
+ll <- seq(1,30,1)
+
+do.val <- 0.05
+
+purrr::walk(ll,
+            .f = function(scenario.id){
+              cat(
+                whisker::whisker.render(
+                  readLines('cluster/pgms/tmpls/2xcontH1_wald_sing_nompi.tmpl'),
+                  data = list(sc_id = scenario.id,
+                              val = do.val)
+                ),
+                file = file.path('cluster/pgms/wald/2xcont/do5',
+                                 sprintf("2xcontH1_sc%s_do%s_param1_sing.R", 
+                                         scenario.id, round(100*do.val,0))
+                ),
+                sep='\n') 
+            })
+
+############################################
+## FM - SLURM- no MPI, H1, do=15%, sing  ##
+############################################
+
+ll <- seq(1,30,1)
+
+do.val <- 0.15
+
+purrr::walk(ll,
+            .f = function(scenario.id){
+              cat(
+                whisker::whisker.render(
+                  readLines('cluster/pgms/tmpls/2xcontH1_fm_sing_nompi.tmpl'),
+                  data = list(sc_id = scenario.id,
+                              val = do.val)
+                ),
+                file = file.path('cluster/pgms/fm/2xcont/do15',
+                                 sprintf("2xcontH1_sc%s_do%s_param1_sing.R", 
+                                         scenario.id, round(100*do.val,0))
+                ),
+                sep='\n') 
+            })
+
+############################################
+## FM - SLURM- no MPI, H1, do=10%, sing  ##
+############################################
+
+ll <- seq(1,30,1)
+
+do.val <- 0.10
+
+purrr::walk(ll,
+            .f = function(scenario.id){
+              cat(
+                whisker::whisker.render(
+                  readLines('cluster/pgms/tmpls/2xcontH1_fm_sing_nompi.tmpl'),
+                  data = list(sc_id = scenario.id,
+                              val = do.val)
+                ),
+                file = file.path('cluster/pgms/fm/2xcont/do10',
+                                 sprintf("2xcontH1_sc%s_do%s_param1_sing.R", 
+                                         scenario.id, round(100*do.val,0))
+                ),
+                sep='\n') 
+            })
+
+############################################
+## FM - SLURM- no MPI, H1, do=5%, sing  ##
+############################################
+
+ll <- seq(1,30,1)
+
+do.val <- 0.05
+
+purrr::walk(ll,
+            .f = function(scenario.id){
+              cat(
+                whisker::whisker.render(
+                  readLines('cluster/pgms/tmpls/2xcontH1_fm_sing_nompi.tmpl'),
+                  data = list(sc_id = scenario.id,
+                              val = do.val)
+                ),
+                file = file.path('cluster/pgms/fm/2xcont/do5',
+                                 sprintf("2xcontH1_sc%s_do%s_param1_sing.R", 
+                                         scenario.id, round(100*do.val,0))
+                ),
+                sep='\n') 
+            })

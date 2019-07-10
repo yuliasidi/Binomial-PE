@@ -117,7 +117,11 @@ h0.mice.5 <- map_df(ll,
                    })%>%
   dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
 
-saveRDS(h0.mice.5, "cluster/out/overall/h0.mice.fm.15.rds")
+h0.mice.5 <- h0.mice.5%>%
+  mutate(d = ifelse(scenario.id==29 && k.C.spec == "normal(2.1, 0.05)", 1, 0))%>%
+  filter(d==0)
+
+saveRDS(h0.mice.5, "cluster/out/overall/h0.mice.fm.5.rds")
 
 
 

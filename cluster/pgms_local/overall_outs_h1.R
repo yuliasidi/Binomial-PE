@@ -48,18 +48,18 @@ dev.off()
 ##### CCA for MAR #####
 #######################
 
-h0.sing <- map_df(list.files("cluster/out/overall", "h0.sing", full.names = T), readRDS)
+h1.sing <- map_df(list.files("cluster/out/overall", "h1.sing", full.names = T), readRDS)
 
 #h0.sing$missing.desc <- factor(h0.sing$missing.desc,levels=unique(h0.sing$missing.desc)[c(4,3,2,1,5,6,7,8,9,10)])
-h0.sing$missing.desc <- factor(h0.sing$missing.desc,levels=unique(h0.sing$missing.desc)[c(9,7,2,1,3,8,10,4,5,6)])
+h1.sing$missing.desc <- factor(h1.sing$missing.desc,levels=unique(h1.sing$missing.desc)[c(9,7,2,1,3,8,10,4,5,6)])
 
-h0.sing <-
-  h0.sing%>%
+h1.sing <-
+  h1.sing%>%
   left_join(ss%>%
               dplyr::filter(method=="wald")%>%
               dplyr::select(scenario.id, p_C, M2, n.arm), by = c("scenario.id"))%>%
     dplyr::mutate(flabel = sprintf('Delta:%s~p[C]:%s~n:%s', M2, p_C, n.arm))%>%
-  left_join(full.type1%>%
+  left_join(full.power%>%
               dplyr::select(scenario.id, method, reject.h0), 
             by = c("scenario.id", "method")) 
 
@@ -446,73 +446,54 @@ bias.cca.mar.blnc.sc.all
 dev.off()
 
 ###################################
-##### Best/Worst/CCA for MCAR #####
+##### Power CCA for MCAR      #####
 ###################################
 
 
-h0.best.mcar<-
-  h0.sing%>%
-  dplyr::filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26))%>%
-  dplyr::filter(strategy=="best", missing=="mcar")%>%
-  ggplot(aes(x=do,y=type1,colour=method)) + 
-  geom_point(aes(shape = method)) + 
-  facet_wrap(~flabel,nrow=3, ncol = 3, labeller = ggplot2::label_parsed) + 
-  geom_hline(yintercept=c(0.9,1.1)*0.025,
-             linetype=2) + 
-  #scale_y_continuous(breaks = seq(0, 0.045, 0.01), limits = c(0, 0.045)) +
-  scale_x_continuous(breaks = seq(0.05, 0.2, 0.05), limits = c(0, 0.25),
-                     labels = scales::percent_format(accuracy = 1)) +
-  scale_color_discrete(labels=c('FM','Wald','WN')) + 
-  scale_shape_discrete(labels=c('FM','Wald','WN')) + 
-  labs(y = "Empirical Type-I error",
-       x = "Drop-out rate (%)")
-
-pdf("cluster/out/overall/plots/h0_best_mcar.pdf")
-h0.best.mcar
-dev.off()
-
-h0.worst.mcar<-
-  h0.sing%>%
-  dplyr::filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26))%>%
-  dplyr::filter(strategy=="worst", missing=="mcar")%>%
-  ggplot(aes(x=do,y=type1,colour=method)) + 
-  geom_hline(yintercept=c(0.9,1.1)*0.025,
-               linetype=2) +
-  geom_point(size = 3) + 
-  facet_wrap(~flabel,nrow=3, ncol = 3, labeller = ggplot2::label_parsed) + 
-  scale_x_continuous(breaks = seq(0.05, 0.2, 0.05), limits = c(0, 0.25),
-                     labels = scales::percent_format(accuracy = 1)) +
-  scale_color_discrete(labels=c('FM','Wald','WN')) + 
-  scale_shape_discrete(labels=c('FM','Wald','WN')) + 
-  labs(y = "Empirical Type-I error",
-       x = "Drop-out rate (%)",
-       color = "Method") 
-
-pdf("cluster/out/overall/plots/h0_worst_mcar.pdf")
-h0.worst.mcar
-dev.off()
-
-
-h0.cca.mcar<-
-  h0.sing%>%
+power.cca.mcar<-
+  h1.sing%>%
   dplyr::filter(scenario.id%in%c(2,4,6,17,19,21,23,25,26))%>%
   dplyr::filter(strategy=="cca", missing=="mcar")%>%
-  ggplot(aes(x=do,y=type1,colour=method)) + 
-  geom_point(aes(shape = method)) + 
+  ggplot(aes(x=do,y=power,colour=method)) + 
+  geom_point(size = 3) + 
   facet_wrap(~flabel,nrow=3, ncol = 3, labeller = ggplot2::label_parsed) + 
-  geom_hline(yintercept=c(0.9,1.1)*0.025,
+  geom_hline(yintercept=0.9,
              linetype=2) + 
-  scale_y_continuous(breaks = seq(0, 0.045, 0.01), limits = c(0, 0.045)) +
+  scale_y_continuous(breaks = seq(0.75, 0.95, 0.05), limits = c(0.75, 0.95)) +
   scale_x_continuous(breaks = seq(0.05, 0.2, 0.05), limits = c(0, 0.25),
                      labels = scales::percent_format(accuracy = 1)) +
   scale_color_discrete(labels=c('FM','Wald','WN')) + 
-  scale_shape_discrete(labels=c('FM','Wald','WN')) + 
-  labs(y = "Empirical Type-I error",
-       x = "Drop-out rate (%)") 
+  labs(y = "Empirical power",
+       x = "Drop-out rate (%)",
+       color = "Method") +
+  theme(text=element_text(size=12))
 
-pdf("cluster/out/overall/plots/h0_cca_mcar.pdf")
-h0.cca.mcar
+pdf("cluster/out/overall/plots/h1_cca_mcar.pdf")
+power.cca.mcar
 dev.off()
+
+
+power.cca.mcar.sc.all <-
+  h1.sing%>%
+  dplyr::filter(strategy=="cca", missing=="mcar")%>%
+  ggplot(aes(x=do,y=power,colour=method)) + 
+  geom_point(size = 2) + 
+  facet_wrap(~flabel,nrow=5, ncol = 6, labeller = ggplot2::label_parsed) + 
+  geom_hline(yintercept=0.9,
+             linetype=2) + 
+  scale_y_continuous(breaks = seq(0.75, 0.95, 0.05), limits = c(0.75, 0.95)) +
+  scale_x_continuous(breaks = seq(0.05, 0.2, 0.05), limits = c(0, 0.25),
+                     labels = scales::percent_format(accuracy = 1)) +
+  scale_color_discrete(labels=c('FM','Wald','WN')) + 
+  labs(y = "Empirical power",
+       x = "Drop-out rate (%)",
+       color = "Method") +
+  theme(text=element_text(size=8))
+
+pdf("cluster/out/overall/plots/h1_cca_mcar_scall.pdf")
+power.cca.mcar.sc.all
+dev.off()
+
 
 
 ###########################
