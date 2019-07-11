@@ -1191,3 +1191,34 @@ pdf("cluster/out/overall/plots/bias_mice_mnar2_scall.pdf")
 bias.mice.mnar2.sc.all
 dev.off()
 
+
+#############################
+## Data for table for sc=8 ##
+#############################
+sc8.type1 <- h0.mnar%>%
+  filter(scenario.id == 8, missing.desc=="p_T_obs > p_T_full")%>%
+  select(method, do, type1, type1.mice)%>%
+  rename(CCA = type1,
+         MI = type1.mice)
+
+sc8.bias <- h0.mnar%>%
+  filter(scenario.id == 8, missing.desc=="p_T_obs > p_T_full")%>%
+  select(method, do, mean.bias, bias.mice)%>%
+  rename(CCA = mean.bias,
+         MI = bias.mice)
+
+
+sc8 <- sc8.type1%>%
+  tidyr::gather(key = "strategy", value = "Type1", CCA, MI)%>%
+  inner_join(sc8.bias%>%
+               tidyr::gather(key = "strategy", value = "Bias", CCA, MI),
+             by = c("method", "do", "strategy"))%>%
+  arrange(do, method)%>%
+  mutate(method = case_when(method=="fm" ~ "FM",
+                            method=="wn" ~ "WN",
+                            method=="wald" ~ "Wald"))
+
+print(xtable::xtable(sc8%>%
+                 filter(do==0.15), digits = 3),include.rownames=FALSE)
+
+print(xtable::xtable(sc8, digits = 3), include.rownames=FALSE)
