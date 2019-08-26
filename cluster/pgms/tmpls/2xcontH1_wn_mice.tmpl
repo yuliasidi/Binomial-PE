@@ -17,6 +17,9 @@ scenario <- {{sc_id}}
 param <- 1
 anal.type <- "mice"
 
+pro_wnmi <<-FALSE
+
+
 ss <- ss.bounds%>%
   dplyr::filter(method == "wn", scenario.id == scenario)
 
