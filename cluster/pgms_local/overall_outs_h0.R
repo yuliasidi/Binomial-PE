@@ -462,7 +462,7 @@ bias.cca.mar.blnc.sc.all <-
   h0.sing%>%
   dplyr::filter(strategy=="cca", missing%in%c("mar1","mar"))%>%
   ggplot(aes(x=do,y=mean.bias,colour=method)) + 
-  geom_point(aes(shape = method)) + 
+  geom_point(size = 2) + 
   facet_wrap(~flabel,nrow=5, ncol = 6, labeller = ggplot2::label_parsed) + 
   geom_hline(yintercept=c(-0.1,0.1),
              linetype=2) + 

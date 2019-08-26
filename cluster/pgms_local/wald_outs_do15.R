@@ -40,7 +40,30 @@ full.type1 <- readRDS("cluster/out/overall/full.type1.wald.rds")
 #compare full datasets between simulations for do=20% and do=15%, should be exactly the same
 compare::compare(full.type1%>%arrange(scenario.id),
                  full.type1.do15%>%arrange(scenario.id))
-                 
+
+
+#######################################################
+# Check full data under H1, DO=15% vs previous result #
+#######################################################
+
+ll <- seq(1,30,1)
+
+full.power.do15 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/do15", 
+                                    sprintf("cont2xH1_wald_sing_sc%s_do15_param1.rds", sc), 
+                                    full.names = T))
+           full.check(df, sc)
+         })%>%
+  dplyr::mutate(method = "wald")
+
+full.power <- readRDS("cluster/out/overall/full.power.wald.rds")
+
+#compare full datasets between simulations for do=20% and do=15%, should be exactly the same
+compare::compare(full.power.do15%>%arrange(scenario.id),
+                 full.power%>%arrange(scenario.id))
+
 #########################################
 # Check do rates, data under H0, DO=15% #
 ########################################

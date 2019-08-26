@@ -19,7 +19,6 @@ source("funs/miss.desc.R")
 source("funs/missing.desc.adj.R")
 source("funs/pcheck.cca.R") 
 
-#UPDATE THE SING PART!!!
 #######################################################
 # Check full data under H0, DO=10% vs previous result #
 #######################################################
@@ -41,6 +40,28 @@ full.type1 <- readRDS("cluster/out/overall/full.type1.wald.rds")
 #compare full datasets between simulations for do=20% and do=10%, should be exactly the same
 compare::compare(full.type1%>%arrange(scenario.id),
                  full.type1.do10%>%arrange(scenario.id))
+
+#######################################################
+# Check full data under H1, DO=10% vs previous result #
+#######################################################
+
+ll <- seq(1,30,1)
+
+full.power.do10 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/do10", 
+                                    sprintf("cont2xH1_wald_sing_sc%s_do10_param1.rds", sc), 
+                                    full.names = T))
+           full.check(df, sc)
+         })%>%
+  dplyr::mutate(method = "wald")
+
+full.power <- readRDS("cluster/out/overall/full.power.wald.rds")
+
+#compare full datasets between simulations for do=20% and do=10%, should be exactly the same
+compare::compare(full.power.do10%>%arrange(scenario.id),
+                 full.power%>%arrange(scenario.id))
 
 
 #########################################
@@ -64,7 +85,7 @@ saveRDS(do.check.do10%>%
 
 
 #########################################
-# Check do rates, data under H1, DO=15% #
+# Check do rates, data under H1, DO=10% #
 #########################################
 
 ll <- seq(1,30,1)
@@ -84,7 +105,7 @@ saveRDS(do.check.do10.h1%>%
 
 
 ##########################################################################
-# Empirical type-I error - Incomplete, single imputation strategy, DO=15%#
+# Empirical type-I error - Incomplete, single imputation strategy, DO=10%#
 ##########################################################################
 
 ll <- seq(1,30,1)

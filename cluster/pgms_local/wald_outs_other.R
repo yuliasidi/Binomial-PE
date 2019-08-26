@@ -21,8 +21,9 @@ source("funs/pcheck.cca.R")
 
 
 
-
+################################
 ##### Different k's ############
+################################
 
 x1.sc21.sing1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc21_do20_param1.rds")
 x1.sc21.sing2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_sing_sc21_do20_param11.rds")
@@ -84,15 +85,15 @@ diffk.mnar2.wald.sc21.do20 <-
   diffk.wald.sc21.do20%>%
   dplyr::filter(missing.desc!="p_T_obs > p_T_full")%>%
   ggplot(aes(x=k.C,y=type1.mice)) + 
-  geom_point() + 
+  geom_point(size = 3) + 
   geom_hline(yintercept=diffk.wald.sc21.do20$type1[10]) + 
   geom_hline(yintercept=c(0.9,1.1)*0.025,
              linetype=2) + 
-  scale_y_continuous(breaks = seq(0, 0.15, 0.025), limits = c(0, .15)) +
+  scale_y_continuous(breaks = c(seq(0, 0.125, 0.025), 0.1442), limits = c(0, .15), 
+                     labels = c(seq(0, 0.125, 0.025), 'CCA')) +
   labs(y = "Empirical Type-I error",
-       x = "k_C Distribution") +
-  theme_bw() +
-  theme(legend.position = 'bottom')
+       x = latex2exp::TeX('k_C Distribution')) +
+  theme(axis.text.x = element_text(size = rel(0.75)))
 
 pdf("cluster/out/overall/plots/diffk_mnar2_wald_sc21_do20.pdf")
 diffk.mnar2.wald.sc21.do20
@@ -121,3 +122,29 @@ x1.nonest.ex <-
   )
 
 saveRDS(x1.nonest.ex, "cluster/out/wald/2xcont/nonest/sc21_do20_nonest.rds")
+
+
+###################
+## BW imputation ##
+###################
+
+bw.h0.1 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_bw_sc21_do20_param1.rds")
+bw.h0.2 <- readRDS("cluster/out/wald/2xcont/cont2xH0_wald_bw_sc21_do20_param11.rds")
+bw.h0 <- append(bw.h0.1, bw.h0.2)
+remove(bw.h0.1, bw.h0.2)
+
+h0.sing.sum(bw.h0)
+ss%>%filter(scenario.id==21)
+
+bw.h1 <- readRDS("cluster/out/wald/2xcont/cont2xH1_wald_bw_sc21_do20_param1.rds")
+h0.sing.sum(bw.h1)
+full.check(bw.h1,21)
+
+bw.h1[[1]]$ci.miss$results
+
+
+
+
+
+
+

@@ -41,6 +41,28 @@ full.type1 <- readRDS("cluster/out/overall/full.type1.wald.rds")
 compare::compare(full.type1%>%arrange(scenario.id),
                  full.type1.do5%>%arrange(scenario.id))
 
+#######################################################
+# Check full data under H1, DO=5% vs previous result #
+#######################################################
+
+ll <- seq(1,30,1)
+
+full.power.do5 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/wald/2xcont/do5", 
+                                    sprintf("cont2xH1_wald_sing_sc%s_do5_param1.rds", sc), 
+                                    full.names = T))
+           full.check(df, sc)
+         })%>%
+  dplyr::mutate(method = "wald")
+
+full.power <- readRDS("cluster/out/overall/full.power.wald.rds")
+
+#compare full datasets between simulations for do=20% and do=5%, should be exactly the same
+compare::compare(full.power.do5%>%arrange(scenario.id),
+                 full.power%>%arrange(scenario.id))
+
 
 #########################################
 # Check do rates, data under H0, DO=5% #
@@ -78,8 +100,8 @@ do.check.do5.h1 <-
          })%>%
   dplyr::mutate(method = "wald", do = 0.05, hyp = "H1")
 
-saveRDS(do.check.do10.h1%>%
-          dplyr::arrange(scenario.id), "cluster/out/overall/do.check.wald.10.rds")
+saveRDS(do.check.do5.h1%>%
+          dplyr::arrange(scenario.id), "cluster/out/overall/do.check.wald.5.rds")
 
 
 ##########################################################################
@@ -147,21 +169,23 @@ power.sing.5 <-
              dplyr::select(-mean.bias)%>%
              dplyr::rename(power=type1)
          })%>%
-  dplyr::mutate(method = "wald")
+  dplyr::mutate(method = "wald")%>%
+  dplyr::mutate(missing.desc = ifelse(is.na(missing.desc)==T, "  0%", missing.desc))
+
 
 saveRDS(power.sing.5, "cluster/out/overall/h1.sing.wald.5.rds")
 
 
 ###################################################################
-# Empirical power - Incomplete, MICE imputation strategy, DO=10%  #
+# Empirical power - Incomplete, MICE imputation strategy, DO=5%   #
 ###################################################################
 ll <- seq(1,30,1)
 
-power.mice.10 <-
+power.mice.5 <-
   map_df(ll, 
          .f = function(sc) {
-           df <- readRDS(list.files("cluster/out/wald/2xcont/do10", 
-                                    sprintf("cont2xH1_wald_mice_sc%s_do10_param1.rds", sc), 
+           df <- readRDS(list.files("cluster/out/wald/2xcont/do5", 
+                                    sprintf("cont2xH1_wald_mice_sc%s_do5_param1.rds", sc), 
                                     full.names = T))
            h0.mice.sum(df)%>%
              dplyr::select(-mean.bias)%>%
@@ -169,5 +193,5 @@ power.mice.10 <-
          })%>%
   dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
 
-saveRDS(power.mice.10, "cluster/out/overall/h1.mice.wald.10.rds")
+saveRDS(power.mice.5, "cluster/out/overall/h1.mice.wald.5.rds")
 

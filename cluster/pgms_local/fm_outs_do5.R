@@ -41,6 +41,29 @@ full.type1 <- readRDS("cluster/out/overall/full.type1.fm.rds")
 compare::compare(full.type1%>%arrange(scenario.id),
                  full.type1.do5%>%arrange(scenario.id))
 
+#######################################################
+# Check full data under H1, DO=10% vs previous result #
+#######################################################
+
+ll <- seq(1,30,1)
+
+full.power.do5 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/fm/2xcont/do5", 
+                                    sprintf("cont2xH1_fm_sing_sc%s_do5_param1.rds", sc), 
+                                    full.names = T))
+           full.check(df, sc)
+         })%>%
+  dplyr::mutate(method = "fm")
+
+full.power <- readRDS("cluster/out/overall/full.power.fm.rds")
+
+#compare full datasets between simulations for do=20% and do=5%, should be exactly the same
+compare::compare(full.power.do5%>%arrange(scenario.id),
+                 full.power%>%arrange(scenario.id))
+
+
 #########################################
 # Check do rates, data under H0, DO=5% #
 ########################################
@@ -65,7 +88,7 @@ ll <- seq(1,30,1)
 do.check.do5.h1 <-
   map_df(ll, 
          .f = function(sc) {
-           df <- readRDS(list.files("cluster/out/fm/2xcont/", 
+           df <- readRDS(list.files("cluster/out/fm/2xcont/do5", 
                                     sprintf("cont2xH1_fm_sing_sc%s_do5_param1.rds", sc), 
                                     full.names = T))
            do.check(df)
@@ -73,7 +96,7 @@ do.check.do5.h1 <-
   dplyr::mutate(method = "fm", do = 0.05, hyp = "H1")
 
 saveRDS(do.check.do5.h1%>%
-          dplyr::arrange(scenario.id), "cluster/out/overall/do.check.fm.5.h1.rds")
+          dplyr::arrange(scenario.id), "cluster/out/overall/checks/do.check.fm.5.h1.rds")
 
 ##########################################################################
 # Empirical type-I error - Incomplete, single imputation strategy, DO=5%#
@@ -123,6 +146,47 @@ h0.mice.5 <- h0.mice.5%>%
 
 saveRDS(h0.mice.5, "cluster/out/overall/h0.mice.fm.5.rds")
 
+
+#####################################################################
+# Empirical power - Incomplete, single imputation strategy, DO=5%   #
+#####################################################################
+ll <- seq(1,30,1)
+
+power.sing.5 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/fm/2xcont/do5", 
+                                    sprintf("cont2xH1_fm_sing_sc%s_do5_param1.rds", sc), 
+                                    full.names = T))
+           h0.sing.sum(df)%>%
+             dplyr::select(-mean.bias)%>%
+             dplyr::rename(power=type1)
+         })%>%
+  dplyr::mutate(method = "fm")%>%
+  dplyr::mutate(missing.desc = ifelse(is.na(missing.desc)==T, "  0%", missing.desc))
+
+
+saveRDS(power.sing.5, "cluster/out/overall/h1.sing.fm.5.rds")
+
+
+###################################################################
+# Empirical power - Incomplete, MICE imputation strategy, DO=5%   # UPDATE!
+###################################################################
+ll <- seq(1,30,1)
+
+power.mice.5 <-
+  map_df(ll, 
+         .f = function(sc) {
+           df <- readRDS(list.files("cluster/out/fm/2xcont/do5", 
+                                    sprintf("cont2xH1_fm_mice_sc%s_do5_param1.rds", sc), 
+                                    full.names = T))
+           h0.mice.sum(df)%>%
+             dplyr::select(-mean.bias)%>%
+             dplyr::rename(power=type1)
+         })%>%
+  dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
+
+saveRDS(power.mice.5, "cluster/out/overall/h1.mice.fm.5.rds")
 
 
 

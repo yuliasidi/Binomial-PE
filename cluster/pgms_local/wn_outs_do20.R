@@ -165,14 +165,14 @@ ll <- seq(1,30,1)
 power.mice.20 <-
   map_df(ll, 
          .f = function(sc) {
-           df <- readRDS(list.files("cluster/out/wald/2xcont/", 
-                                    sprintf("cont2xH1_wald_mice_sc%s_do20_param1.rds", sc), 
+           df <- readRDS(list.files("cluster/out/wn/2xcont/", 
+                                    sprintf("cont2xH1_wn_mice_sc%s_do20_param1.rds", sc), 
                                     full.names = T))
-           h0.mice.sum(df)%>%
+           h0.mice.sum.wn(df)%>%
              dplyr::select(-mean.bias)%>%
              dplyr::rename(power=type1)
          })%>%
-  dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
+  dplyr::mutate(method = "wn", N = num.n.mi, M = num.m.mi)
 
-saveRDS(power.mice.20, "cluster/out/overall/h1.mice.wald.20.rds")
+saveRDS(power.mice.20, "cluster/out/overall/h1.mice.wn.20.rds")
 

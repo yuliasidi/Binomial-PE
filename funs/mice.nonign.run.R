@@ -145,9 +145,16 @@ mice.nonign.run <- function(dt, n.mi = 5, m.mi = 10, M2,
   
   if(method=='wn') 
   {
-    mice.res <- nested.mi.res%>%
-      nested.mi.comb.wn()%>%
-      dplyr::mutate(reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))  
+    
+      mice.res <- nested.mi.res%>%
+        nested.mi.comb.wn()%>%
+        dplyr::mutate(reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))    
+    
+    if(pro_wnmi){
+      mice.res <- nested.mi.res%>%
+        proper_wnmi()%>%
+        dplyr::mutate(reject.h0 = case_when(ci.u < M2 ~ 1, TRUE ~ 0))    
+    }
     
   }
     

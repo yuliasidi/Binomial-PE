@@ -179,9 +179,9 @@ saveRDS(power.sing.20, "cluster/out/overall/h1.sing.fm.20.rds")
 
 
 ###################################################################
-# Empirical power - Incomplete, MICE imputation strategy, DO=20%  #
+# Empirical power - Incomplete, MICE imputation strategy, DO=20%  # UPDATE!!!
 ###################################################################
-ll <- seq(1,30,1)
+ll <- seq(1,30,1) 
 
 power.mice.20 <-
   map_df(ll, 
@@ -193,7 +193,7 @@ power.mice.20 <-
              dplyr::select(-mean.bias)%>%
              dplyr::rename(power=type1)
          })%>%
-  dplyr::mutate(method = "wald", N = num.n.mi, M = num.m.mi)
+  dplyr::mutate(method = "fm", N = num.n.mi, M = num.m.mi)
 
 saveRDS(power.mice.20, "cluster/out/overall/h1.mice.fm.20.rds")
 
